@@ -1,0 +1,2014 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QRIS Predictor</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script><script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+  :root {
+    --primary: #4F46E5;
+    --primary-light: #818CF8;
+    --primary-dark: #3730A3;
+    --accent: #06B6D4;
+    --accent2: #10B981;
+    --accent3: #F59E0B;
+    --danger: #EF4444;
+    --bg: #F0F4FF;
+    --card: #FFFFFF;
+    --text: #1E1B4B;
+    --text-muted: #6B7280;
+    --border: #E0E7FF;
+    --gradient: linear-gradient(135deg, #4F46E5 0%, #06B6D4 100%);
+    --gradient2: linear-gradient(135deg, #10B981 0%, #06B6D4 100%);
+    --shadow: 0 8px 32px rgba(79,70,229,0.15);
+    --shadow-lg: 0 20px 60px rgba(79,70,229,0.2);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    overflow-x: hidden;
+    min-height: 100vh;
+  }
+  /* ===== TOP NAVBAR ===== */
+  .navbar {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px;
+    height: 64px;
+    display: flex; align-items: center; justify-content: space-between;
+    box-shadow: 0 2px 16px rgba(79,70,229,0.08);
+  }
+  .navbar-brand {
+    display: flex; align-items: center; gap: 10px; cursor: pointer;
+    text-decoration: none;
+  }
+  .navbar-logo {
+    width: 36px; height: 36px;
+    background: var(--gradient);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; color: white; font-size: 14px;
+    letter-spacing: -0.5px;
+  }
+  .navbar-title { font-weight: 700; font-size: 16px; color: var(--primary-dark); }
+  .navbar-subtitle { font-size: 11px; color: var(--text-muted); }
+  .navbar-menu {
+    display: flex; align-items: center; gap: 4px;
+  }
+  .nav-btn {
+    padding: 8px 16px; border-radius: 8px;
+    border: none; background: transparent;
+    font-size: 13px; font-weight: 500; color: var(--text-muted);
+    cursor: pointer; transition: all 0.2s;
+    font-family: inherit;
+  }
+  .nav-btn:hover, .nav-btn.active {
+    background: var(--primary);
+    color: white;
+  }
+  .nav-btn.active { background: var(--primary); color: white; }
+  /* ===== PAGES ===== */
+  .page { display: none; min-height: 100vh; padding-top: 64px; }
+  .page.active { display: block; }
+  /* ===== HERO PAGE ===== */
+  #page-home {
+    background: linear-gradient(160deg, #EEF2FF 0%, #F0FDFA 50%, #FFFBEB 100%);
+    position: relative;
+    overflow: hidden;
+  }
+  .hero-bg-orbs {
+    position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    pointer-events: none; overflow: hidden;
+  }
+  .orb {
+    position: absolute; border-radius: 50%;
+    filter: blur(60px); opacity: 0.35;
+    animation: orbFloat 6s ease-in-out infinite;
+  }
+  .orb1 { width: 400px; height: 400px; background: #818CF8; top: -100px; left: -100px; }
+  .orb2 { width: 300px; height: 300px; background: #06B6D4; top: 50px; right: -50px; animation-delay: -2s; }
+  .orb3 { width: 250px; height: 250px; background: #10B981; bottom: 100px; left: 30%; animation-delay: -4s; }
+  @keyframes orbFloat {
+    0%,100% { transform: translateY(0px) scale(1); }
+    50% { transform: translateY(-20px) scale(1.05); }
+  }
+  .hero-content {
+    max-width: 1200px; margin: 0 auto; padding: 80px 32px 60px;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center;
+    position: relative; z-index: 1;
+  }
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(79,70,229,0.1); color: var(--primary);
+    border: 1px solid rgba(79,70,229,0.2);
+    padding: 6px 14px; border-radius: 100px;
+    font-size: 12px; font-weight: 600;
+    margin-bottom: 20px;
+    animation: fadeSlideUp 0.6s ease both;
+  }
+  .badge-dot { width: 7px; height: 7px; background: var(--accent2); border-radius: 50%; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
+  .hero-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: clamp(36px, 5vw, 56px);
+    font-weight: 700;
+    line-height: 1.15;
+    margin-bottom: 20px;
+    animation: fadeSlideUp 0.6s ease 0.1s both;
+  }
+  .hero-title span { background: var(--gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .hero-desc {
+    font-size: 16px; color: var(--text-muted); line-height: 1.75;
+    margin-bottom: 36px;
+    animation: fadeSlideUp 0.6s ease 0.2s both;
+  }
+  .hero-cta {
+    display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
+    animation: fadeSlideUp 0.6s ease 0.3s both;
+  }
+  .btn-primary {
+    background: var(--gradient); color: white;
+    border: none; padding: 14px 28px; border-radius: 12px;
+    font-size: 15px; font-weight: 700; cursor: pointer;
+    display: flex; align-items: center; gap: 8px;
+    box-shadow: 0 8px 24px rgba(79,70,229,0.35);
+    transition: all 0.25s; font-family: inherit;
+    transform: translateY(0);
+  }
+  .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(79,70,229,0.45); }
+  .btn-secondary {
+    background: white; color: var(--primary);
+    border: 2px solid var(--border); padding: 14px 28px; border-radius: 12px;
+    font-size: 15px; font-weight: 600; cursor: pointer;
+    display: flex; align-items: center; gap: 8px;
+    transition: all 0.25s; font-family: inherit;
+  }
+  .btn-secondary:hover { border-color: var(--primary); background: #F5F3FF; }
+  .hero-stats {
+    display: flex; gap: 24px; margin-top: 40px;
+    animation: fadeSlideUp 0.6s ease 0.4s both;
+  }
+  .stat-item { text-align: left; }
+  .stat-value { font-size: 24px; font-weight: 800; color: var(--primary); }
+  .stat-label { font-size: 11px; color: var(--text-muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; }
+  .hero-visual {
+    display: flex; flex-direction: column; gap: 16px;
+    animation: fadeSlideUp 0.6s ease 0.2s both;
+  }
+  .phone-card {
+    background: white; border-radius: 20px;
+    box-shadow: var(--shadow-lg);
+    padding: 24px; position: relative; overflow: hidden;
+  }
+  .phone-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px;
+    background: var(--gradient);
+  }
+  .qr-preview {
+    width: 80px; height: 80px;
+    background: var(--gradient);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    color: white; font-size: 32px;
+    margin-bottom: 12px; float: left; margin-right: 16px;
+  }
+  .card-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; }
+  .card-value { font-size: 28px; font-weight: 800; color: var(--text); }
+  .card-sub { font-size: 12px; color: var(--accent2); font-weight: 600; }
+  .clearfix::after { content:''; display:table; clear:both; }
+  .mini-chart-card {
+    background: white; border-radius: 16px; padding: 20px;
+    box-shadow: var(--shadow);
+  }
+  .mini-chart-label { font-size: 13px; font-weight: 600; color: var(--text-muted); margin-bottom: 12px; }
+  .feature-pills {
+    display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px;
+    animation: fadeSlideUp 0.6s ease 0.5s both;
+  }
+  .pill {
+    background: white; border: 1px solid var(--border);
+    border-radius: 100px; padding: 6px 14px;
+    font-size: 12px; font-weight: 600; color: var(--primary);
+    display: flex; align-items: center; gap: 6px;
+    box-shadow: 0 2px 8px rgba(79,70,229,0.08);
+  }
+  @keyframes fadeSlideUp {
+    from { opacity:0; transform:translateY(20px); }
+    to { opacity:1; transform:translateY(0); }
+  }
+  /* ===== MENU PAGE ===== */
+  #page-menu { background: var(--bg); }
+  .page-header {
+    background: white; padding: 32px; border-bottom: 1px solid var(--border);
+    text-align: center;
+  }
+  .page-eyebrow {
+    font-size: 12px; font-weight: 700; color: var(--primary);
+    text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 8px;
+  }
+  .page-title { font-size: 28px; font-weight: 800; color: var(--text); margin-bottom: 8px; }
+  .page-subtitle { font-size: 14px; color: var(--text-muted); }
+  .menu-grid {
+    display: grid; grid-template-columns: repeat(2, 1fr);
+    gap: 24px; max-width: 900px; margin: 48px auto; padding: 0 32px;
+  }
+  .menu-card {
+    background: white; border-radius: 20px;
+    padding: 32px; cursor: pointer;
+    transition: all 0.3s; position: relative; overflow: hidden;
+    border: 2px solid transparent;
+    box-shadow: 0 4px 16px rgba(79,70,229,0.08);
+  }
+  .menu-card::before {
+    content: ''; position: absolute; inset: 0;
+    background: var(--gradient); opacity: 0;
+    transition: opacity 0.3s; z-index: 0;
+  }
+  .menu-card:hover { transform: translateY(-6px); border-color: var(--primary); box-shadow: var(--shadow-lg); }
+  .menu-card:hover::before { opacity: 0.04; }
+  .menu-card * { position: relative; z-index: 1; }
+  .menu-icon {
+    width: 60px; height: 60px; border-radius: 16px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px; margin-bottom: 20px;
+  }
+  .icon-blue { background: #EEF2FF; }
+  .icon-cyan { background: #ECFEFF; }
+  .icon-green { background: #ECFDF5; }
+  .icon-amber { background: #FFFBEB; }
+  .menu-card-title { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+  .menu-card-desc { font-size: 13px; color: var(--text-muted); line-height: 1.6; margin-bottom: 20px; }
+  .menu-enter-btn {
+    background: var(--gradient); color: white;
+    border: none; padding: 10px 20px; border-radius: 10px;
+    font-size: 13px; font-weight: 600; cursor: pointer;
+    font-family: inherit; display: flex; align-items: center; gap: 6px;
+    transition: all 0.2s; width: fit-content;
+  }
+  .menu-enter-btn:hover { transform: translateX(3px); }
+  /* ===== CONTENT PAGES ===== */
+  .content-layout {
+    display: grid; grid-template-columns: 260px 1fr; min-height: calc(100vh - 64px);
+  }
+  .sidebar {
+    background: white; border-right: 1px solid var(--border);
+    padding: 24px 16px; position: sticky; top: 64px; height: calc(100vh - 64px);
+    overflow-y: auto;
+  }
+  .sidebar-title { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em; padding: 0 8px; margin-bottom: 12px; }
+  .sidebar-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px; border-radius: 10px;
+    cursor: pointer; transition: all 0.2s; margin-bottom: 4px;
+    font-size: 13px; font-weight: 500; color: var(--text-muted);
+    border: 1px solid transparent;
+  }
+  .sidebar-item:hover { background: #F5F3FF; color: var(--primary); }
+  .sidebar-item.active { background: #EEF2FF; color: var(--primary); border-color: rgba(79,70,229,0.2); font-weight: 700; }
+  .sidebar-num {
+    width: 22px; height: 22px; border-radius: 6px; background: var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700; flex-shrink: 0;
+  }
+  .sidebar-item.active .sidebar-num { background: var(--primary); color: white; }
+  .content-main { padding: 40px; background: var(--bg); }
+  .content-section { display: none; }
+  .content-section.active { display: block; }
+  .section-card {
+    background: white; border-radius: 20px; padding: 36px;
+    box-shadow: 0 4px 16px rgba(79,70,229,0.06);
+    margin-bottom: 24px; border: 1px solid var(--border);
+  }
+  .section-title { font-size: 22px; font-weight: 800; margin-bottom: 16px; color: var(--text); display: flex; align-items: center; gap: 12px; }
+  .section-body { font-size: 14px; line-height: 1.85; color: #374151; }
+  .section-body p { margin-bottom: 12px; }
+  .formula-box {
+    background: linear-gradient(135deg, #EEF2FF 0%, #E0F2FE 100%);
+    border: 1px solid rgba(79,70,229,0.2);
+    border-radius: 14px; padding: 20px 24px; margin: 20px 0;
+    text-align: center;
+  }
+  .formula-box .formula { font-size: 22px; font-weight: 700; color: var(--primary); font-family: 'Space Grotesk', sans-serif; }
+  .formula-box .formula-label { font-size: 12px; color: var(--text-muted); margin-top: 6px; }
+  .var-legend {
+    background: white; border: 1px solid var(--border); border-radius: 12px;
+    padding: 14px 18px; margin: -10px 0 20px 0; font-size: 13px;
+  }
+  .var-legend-title { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
+  .var-legend-item { display: flex; align-items: baseline; gap: 8px; padding: 4px 0; line-height: 1.6; }
+  .var-legend-sym { flex-shrink: 0; min-width: 38px; font-weight: 700; color: var(--primary); font-family: 'Space Grotesk', sans-serif; }
+  .var-legend-desc { color: #374151; }
+  .assumption-list { list-style: none; }
+  .assumption-list li {
+    display: flex; gap: 12px; align-items: flex-start;
+    padding: 14px 0; border-bottom: 1px solid var(--border);
+    font-size: 14px; line-height: 1.6;
+  }
+  .assumption-list li:last-child { border: none; }
+  .assump-icon { flex-shrink: 0; width: 28px; height: 28px; border-radius: 8px; background: var(--gradient); display: flex; align-items: center; justify-content: center; color: white; font-size: 13px; margin-top: 2px; }
+  .param-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 20px; }
+  .param-card {
+    background: linear-gradient(135deg, #F5F3FF 0%, #EFF6FF 100%);
+    border: 1px solid rgba(79,70,229,0.15);
+    border-radius: 14px; padding: 20px; text-align: center;
+  }
+  .param-symbol { font-size: 28px; font-weight: 800; color: var(--primary); font-family: 'Space Grotesk', sans-serif; }
+  .param-value { font-size: 18px; font-weight: 700; color: var(--accent); margin: 4px 0; }
+  .param-desc { font-size: 12px; color: var(--text-muted); line-height: 1.5; }
+  .data-table {
+    width: 100%; border-collapse: separate; border-spacing: 0;
+    font-size: 13px; margin-top: 16px;
+  }
+  .data-table th {
+    background: var(--primary); color: white; padding: 12px 16px;
+    text-align: left; font-weight: 600; font-size: 12px;
+  }
+  .data-table th:first-child { border-radius: 10px 0 0 0; }
+  .data-table th:last-child { border-radius: 0 10px 0 0; }
+  .data-table td { padding: 10px 16px; border-bottom: 1px solid var(--border); color: #374151; }
+  .data-table tr:hover td { background: #F5F3FF; }
+  .data-table tr:last-child td:first-child { border-radius: 0 0 0 10px; }
+  .data-table tr:last-child td:last-child { border-radius: 0 0 10px 0; }
+  .data-table tr:last-child td { border: none; }
+  .step-list { list-style: none; counter-reset: step-counter; }
+  .step-list li {
+    counter-increment: step-counter;
+    display: flex; gap: 16px; align-items: flex-start;
+    padding: 16px 0; border-bottom: 1px solid var(--border);
+  }
+  .step-list li:last-child { border: none; }
+  .step-list li::before {
+    content: counter(step-counter);
+    flex-shrink: 0; width: 32px; height: 32px;
+    background: var(--gradient); color: white;
+    border-radius: 10px; display: flex; align-items: center;
+    justify-content: center; font-weight: 700; font-size: 14px;
+    margin-top: 2px;
+  }
+  .step-content { font-size: 14px; line-height: 1.7; }
+  .step-title { font-weight: 700; margin-bottom: 4px; }
+  /* Navigation bottom */
+  .page-nav {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 24px 0; margin-top: 8px;
+  }
+  .nav-arrow {
+    display: flex; align-items: center; gap: 8px;
+    background: white; border: 1.5px solid var(--border);
+    padding: 10px 20px; border-radius: 10px;
+    font-size: 13px; font-weight: 600; color: var(--primary);
+    cursor: pointer; transition: all 0.2s; font-family: inherit;
+  }
+  .nav-arrow:hover { background: var(--primary); color: white; border-color: var(--primary); }
+  .nav-arrow:disabled { opacity: 0.3; cursor: default; }
+  .nav-arrow:disabled:hover { background: white; color: var(--primary); border-color: var(--border); }
+  .nav-back-home {
+    background: var(--bg); border: 1.5px solid var(--border);
+    padding: 10px 20px; border-radius: 10px;
+    font-size: 13px; font-weight: 600; color: var(--text-muted);
+    cursor: pointer; transition: all 0.2s; font-family: inherit;
+  }
+  .nav-back-home:hover { background: white; color: var(--text); }
+  /* ===== SIMULASI PAGE ===== */
+  .simulator-layout { padding: 40px; max-width: 1100px; margin: 0 auto; }
+  .sim-title { font-size: 26px; font-weight: 800; margin-bottom: 6px; }
+  .sim-subtitle { font-size: 14px; color: var(--text-muted); margin-bottom: 32px; }
+  .sim-grid { display: grid; grid-template-columns: 320px 1fr; gap: 24px; }
+  .sim-panel {
+    background: white; border-radius: 20px; padding: 28px;
+    border: 1px solid var(--border); box-shadow: var(--shadow);
+  }
+  .sim-panel-title { font-size: 15px; font-weight: 700; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+  .input-group { margin-bottom: 20px; }
+  .input-label {
+    font-size: 12px; font-weight: 700; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; display: block;
+  }
+  .input-hint { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+  .input-field {
+    width: 100%; padding: 12px 16px; border: 2px solid var(--border);
+    border-radius: 10px; font-size: 15px; font-weight: 600;
+    font-family: inherit; color: var(--text); transition: all 0.2s;
+    background: white; outline: none;
+  }
+  .input-field:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79,70,229,0.1); }
+  .range-wrapper { display: flex; align-items: center; gap: 12px; }
+  .range-val {
+    background: var(--gradient); color: white;
+    padding: 8px 14px; border-radius: 10px;
+    font-size: 16px; font-weight: 700; min-width: 80px; text-align: center;
+  }
+  input[type="range"] {
+    flex: 1; -webkit-appearance: none; height: 6px;
+    border-radius: 3px; background: var(--border); outline: none;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 20px; height: 20px;
+    border-radius: 50%; background: var(--primary); cursor: pointer;
+    box-shadow: 0 2px 8px rgba(79,70,229,0.4);
+  }
+  .btn-calc {
+    width: 100%; background: var(--gradient); color: white;
+    border: none; padding: 14px; border-radius: 12px;
+    font-size: 15px; font-weight: 700; cursor: pointer;
+    font-family: inherit; transition: all 0.25s;
+    box-shadow: 0 4px 16px rgba(79,70,229,0.3);
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .btn-calc:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(79,70,229,0.4); }
+  .result-box {
+    background: linear-gradient(135deg, #EEF2FF 0%, #ECFEFF 100%);
+    border: 2px solid rgba(79,70,229,0.15);
+    border-radius: 14px; padding: 20px; margin-top: 20px; text-align: center;
+    display: none;
+  }
+  .result-box.show { display: block; animation: popIn 0.4s ease; }
+  @keyframes popIn { from{transform:scale(0.95);opacity:0;} to{transform:scale(1);opacity:1;} }
+  .result-number { font-size: 36px; font-weight: 800; color: var(--primary); }
+  .result-label { font-size: 12px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; margin-top: 4px; }
+  .result-formula { font-size: 12px; color: var(--text-muted); margin-top: 10px; }
+  .chart-card { background: white; border-radius: 20px; padding: 28px; border: 1px solid var(--border); box-shadow: var(--shadow); }
+  .chart-title { font-size: 15px; font-weight: 700; margin-bottom: 8px; }
+  .chart-sub { font-size: 12px; color: var(--text-muted); margin-bottom: 20px; }
+  select.input-field {
+    appearance: none; -webkit-appearance: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%234F46E5' stroke-width='3'><polyline points='6 9 12 15 18 9'/></svg>");
+    background-repeat: no-repeat; background-position: right 14px center;
+    padding-right: 38px; cursor: pointer;
+  }
+  .interp-result-box {
+    background: linear-gradient(135deg, #ECFDF5 0%, #ECFEFF 100%);
+    border: 1px solid rgba(16,185,129,0.25);
+    border-radius: 14px; padding: 18px 20px; margin-top: 18px;
+    font-size: 13px; line-height: 1.75; color: #065F46;
+  }
+  .interp-result-box strong { color: #065F46; }
+  /* ===== KUIS PAGE ===== */
+  .quiz-layout { padding: 40px; max-width: 800px; margin: 0 auto; }
+  .quiz-header { text-align: center; margin-bottom: 40px; }
+  .quiz-progress-bar {
+    background: var(--border); border-radius: 100px; height: 8px; margin-bottom: 32px; overflow: hidden;
+  }
+  .quiz-progress-fill {
+    height: 100%; background: var(--gradient); border-radius: 100px;
+    transition: width 0.5s ease;
+  }
+  .quiz-card {
+    background: white; border-radius: 20px; padding: 36px;
+    box-shadow: var(--shadow); border: 1px solid var(--border);
+  }
+  .quiz-q-num { font-size: 12px; font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 10px; }
+  .quiz-question { font-size: 18px; font-weight: 700; line-height: 1.5; margin-bottom: 28px; }
+  .quiz-options { display: flex; flex-direction: column; gap: 12px; }
+  .quiz-option {
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px 18px; border-radius: 12px;
+    border: 2px solid var(--border); cursor: pointer;
+    transition: all 0.2s; font-size: 14px; font-weight: 500;
+  }
+  .quiz-option:hover { border-color: var(--primary); background: #F5F3FF; }
+  .quiz-option.selected { border-color: var(--primary); background: #EEF2FF; }
+  .quiz-option.correct { border-color: var(--accent2); background: #ECFDF5; color: #065F46; }
+  .quiz-option.wrong { border-color: var(--danger); background: #FEF2F2; color: #991B1B; }
+  .option-letter {
+    width: 30px; height: 30px; border-radius: 8px; background: var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 13px; flex-shrink: 0;
+  }
+  .quiz-option.selected .option-letter { background: var(--primary); color: white; }
+  .quiz-option.correct .option-letter { background: var(--accent2); color: white; }
+  .quiz-option.wrong .option-letter { background: var(--danger); color: white; }
+  .quiz-feedback {
+    margin-top: 20px; padding: 16px; border-radius: 12px;
+    font-size: 14px; line-height: 1.6; display: none;
+  }
+  .quiz-feedback.show { display: block; animation: fadeSlideUp 0.3s ease; }
+  .quiz-feedback.correct { background: #ECFDF5; border: 1px solid #A7F3D0; color: #065F46; }
+  .quiz-feedback.wrong { background: #FEF2F2; border: 1px solid #FECACA; color: #991B1B; }
+  .quiz-next {
+    margin-top: 24px; display: flex; justify-content: flex-end;
+  }
+  /* ===== GAMEPLAY ELEMENTS ===== */
+  .quiz-hud {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; margin-bottom: 18px; flex-wrap: wrap;
+  }
+  .hud-score {
+    display: flex; align-items: center; gap: 8px;
+    background: linear-gradient(135deg, #EEF2FF 0%, #ECFEFF 100%);
+    border: 1px solid rgba(79,70,229,0.15); border-radius: 100px;
+    padding: 8px 16px; font-size: 14px; font-weight: 800; color: var(--primary);
+  }
+  .hud-combo {
+    display: flex; align-items: center; gap: 6px;
+    background: linear-gradient(135deg, #FFF7ED 0%, #FEF2F2 100%);
+    border: 1px solid rgba(245,158,11,0.3); border-radius: 100px;
+    padding: 8px 14px; font-size: 13px; font-weight: 800; color: #C2410C;
+    opacity: 0; transform: scale(0.8); transition: all 0.3s;
+  }
+  .hud-combo.active { opacity: 1; transform: scale(1); animation: comboPulse 0.5s ease; }
+  @keyframes comboPulse { 0%{transform:scale(1.3);} 100%{transform:scale(1);} }
+  .timer-ring-wrap { position: relative; width: 46px; height: 46px; flex-shrink: 0; }
+  .timer-ring-wrap svg { transform: rotate(-90deg); width: 46px; height: 46px; }
+  .timer-ring-bg { fill: none; stroke: var(--border); stroke-width: 4; }
+  .timer-ring-fg { fill: none; stroke: var(--primary); stroke-width: 4; stroke-linecap: round; transition: stroke-dashoffset 1s linear, stroke 0.3s; }
+  .timer-ring-fg.urgent { stroke: var(--danger); }
+  .timer-num { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; color: var(--text); }
+  .quiz-option { position: relative; overflow: hidden; }
+  .option-points-badge {
+    position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
+    font-size: 11px; font-weight: 800; color: var(--accent2);
+    background: #ECFDF5; padding: 3px 9px; border-radius: 100px;
+    opacity: 0; transition: opacity 0.3s;
+  }
+  .option-points-badge.show { opacity: 1; }
+  .point-popup {
+    position: fixed; pointer-events: none; z-index: 999;
+    font-size: 22px; font-weight: 800; color: var(--accent2);
+    animation: pointFloat 1.1s ease forwards;
+  }
+  @keyframes pointFloat {
+    0% { opacity: 0; transform: translateY(0) scale(0.6); }
+    20% { opacity: 1; transform: translateY(-10px) scale(1.1); }
+    100% { opacity: 0; transform: translateY(-70px) scale(1); }
+  }
+  .milestone-toast {
+    position: fixed; top: 24px; left: 50%; transform: translateX(-50%) translateY(-120%);
+    background: var(--gradient); color: white; padding: 14px 26px;
+    border-radius: 100px; font-size: 14px; font-weight: 800;
+    box-shadow: 0 10px 30px rgba(79,70,229,0.4); z-index: 1000;
+    transition: transform 0.4s cubic-bezier(.34,1.56,.64,1);
+    display: flex; align-items: center; gap: 8px; white-space: nowrap;
+  }
+  .milestone-toast.show { transform: translateX(-50%) translateY(0); }
+  .journey-track {
+    display: flex; gap: 4px; margin-bottom: 18px; flex-wrap: wrap;
+  }
+  .journey-node {
+    flex: 1; min-width: 18px; height: 8px; border-radius: 100px;
+    background: var(--border); transition: all 0.4s;
+  }
+  .journey-node.done-correct { background: var(--accent2); }
+  .journey-node.done-wrong { background: var(--danger); opacity: 0.5; }
+  .journey-node.current { background: var(--primary); animation: nodePulse 1.2s infinite; }
+  @keyframes nodePulse { 0%,100%{opacity:1;} 50%{opacity:0.5;} }
+  .quiz-score {
+    text-align: center; padding: 40px 0; display: none;
+  }
+  .score-emoji { font-size: 64px; margin-bottom: 16px; }
+  .score-num { font-size: 64px; font-weight: 800; color: var(--primary); }
+  .score-text { font-size: 18px; font-weight: 600; color: var(--text-muted); margin-top: 8px; }
+  .score-meta-row { display: flex; justify-content: center; gap: 16px; margin: 18px auto 0; max-width: 420px; }
+  .score-meta-card {
+    flex: 1; background: linear-gradient(135deg, #F5F3FF 0%, #ECFEFF 100%);
+    border: 1px solid rgba(79,70,229,0.15); border-radius: 14px;
+    padding: 16px 12px;
+  }
+  .score-meta-label { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+  .score-meta-val { font-size: 22px; font-weight: 800; color: var(--primary); }
+  .score-rank-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--gradient); color: white;
+    padding: 8px 20px; border-radius: 100px;
+    font-size: 14px; font-weight: 700; margin-top: 18px;
+    box-shadow: 0 6px 18px rgba(79,70,229,0.3);
+  }
+  .score-stars { font-size: 32px; margin: 16px 0; }
+  .score-msg { font-size: 14px; color: var(--text-muted); margin-bottom: 28px; line-height: 1.7; }
+  .btn-restart {
+    background: var(--gradient); color: white; border: none;
+    padding: 14px 28px; border-radius: 12px; font-size: 15px;
+    font-weight: 700; cursor: pointer; font-family: inherit;
+    transition: all 0.25s;
+  }
+  .btn-restart:hover { transform: translateY(-2px); }
+  /* ===== RESPONSIVE ===== */
+  @media (max-width: 768px) {
+    .hero-content { grid-template-columns: 1fr; padding: 48px 20px; }
+    .hero-visual { display: none; }
+    .menu-grid { grid-template-columns: 1fr; padding: 0 20px; }
+    .content-layout { grid-template-columns: 1fr; }
+    .sidebar { display: none; }
+    .content-main { padding: 20px; }
+    .sim-grid { grid-template-columns: 1fr; }
+    .param-grid { grid-template-columns: 1fr; }
+    .navbar-menu { display: none; }
+    .simulator-layout { padding: 20px; }
+    .quiz-layout { padding: 20px; }
+    .score-meta-row { flex-wrap: wrap; }
+    .score-meta-card { min-width: 45%; }
+    .quiz-hud { gap: 8px; }
+    .hud-score, .hud-combo { font-size: 12px; padding: 6px 12px; }
+  }
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--primary-light); }
+  .tag {
+    display: inline-block; background: rgba(79,70,229,0.1); color: var(--primary);
+    padding: 3px 10px; border-radius: 100px; font-size: 11px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.06em;
+  }
+  .info-banner {
+    background: linear-gradient(135deg, #EEF2FF 0%, #E0F2FE 100%);
+    border: 1px solid rgba(79,70,229,0.15);
+    border-radius: 12px; padding: 14px 18px;
+    font-size: 13px; color: #3730A3; margin: 16px 0;
+    display: flex; align-items: flex-start; gap: 10px;
+  }
+  .info-banner .info-icon { flex-shrink: 0; font-size: 16px; margin-top: 1px; }
+  /* ===== SUB-TAB TEORI ===== */
+  .subtab-switch {
+    display: flex; gap: 6px; background: var(--bg);
+    border: 1px solid var(--border); border-radius: 12px;
+    padding: 4px; margin-bottom: 16px;
+  }
+  .subtab-btn {
+    flex: 1; padding: 9px 12px; border: none; border-radius: 9px;
+    background: transparent; color: var(--text-muted);
+    font-size: 12.5px; font-weight: 700; font-family: inherit;
+    cursor: pointer; transition: all 0.2s;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+  }
+  .subtab-btn:hover { color: var(--primary); }
+  .subtab-btn.active { background: white; color: var(--primary); box-shadow: 0 2px 8px rgba(79,70,229,0.15); }
+  .subtab-panel { display: none; }
+  .subtab-panel.active { display: block; }
+  .qris-def-card {
+    display: flex; gap: 16px; align-items: flex-start;
+    background: linear-gradient(135deg, #F5F3FF 0%, #ECFEFF 100%);
+    border: 1px solid rgba(79,70,229,0.15); border-radius: 16px;
+    padding: 22px; margin: 18px 0;
+  }
+  .qris-def-icon {
+    flex-shrink: 0; width: 48px; height: 48px; border-radius: 12px;
+    background: var(--gradient); display: flex; align-items: center;
+    justify-content: center; font-size: 22px;
+  }
+  .ctx-chart-card {
+    background: white; border: 1px solid var(--border); border-radius: 16px;
+    padding: 20px 20px 8px; margin: 18px 0; box-shadow: 0 4px 16px rgba(79,70,229,0.06);
+  }
+  .ctx-chart-title { font-size: 13px; font-weight: 700; color: var(--text-muted); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+  .ctx-stat-row { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin: 16px 0; }
+  .ctx-stat {
+    background: linear-gradient(135deg, #EEF2FF 0%, #ECFEFF 100%);
+    border: 1px solid rgba(79,70,229,0.12); border-radius: 12px;
+    padding: 14px 10px; text-align: center;
+  }
+  .ctx-stat-year { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+  .ctx-stat-val { font-size: 18px; font-weight: 800; color: var(--primary); margin: 2px 0; }
+  .ctx-stat-add { font-size: 11px; color: var(--accent2); font-weight: 600; }
+  .reason-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 16px; }
+  .reason-card {
+    background: white; border: 1px solid var(--border); border-radius: 14px;
+    padding: 16px 18px; display: flex; gap: 12px; align-items: flex-start;
+  }
+  .reason-num {
+    flex-shrink: 0; width: 26px; height: 26px; border-radius: 8px;
+    background: var(--gradient2); color: white; font-size: 12px; font-weight: 800;
+    display: flex; align-items: center; justify-content: center; margin-top: 1px;
+  }
+  .reason-text { font-size: 13px; line-height: 1.6; color: #374151; }
+  .reason-text strong { color: var(--text); }
+  @media (max-width: 900px) {
+    .ctx-stat-row { grid-template-columns: repeat(2,1fr); }
+    .reason-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<!-- NAVBAR -->
+<nav class="navbar">
+  <div class="navbar-brand" onclick="showPage('home')">
+    <div class="navbar-logo">QP</div>
+    <div>
+      <div class="navbar-title">QRIS Predictor</div>
+      <div class="navbar-subtitle">Model Pertumbuhan Pengguna QRIS</div>
+    </div>
+  </div>
+  <div class="navbar-menu">
+    <button class="nav-btn active" onclick="showPage('home'); setNav(this)">🏠 Beranda</button>
+    <button class="nav-btn" onclick="showPage('menu'); setNav(this)">📚 Menu</button>
+    <button class="nav-btn" onclick="showPage('teori-pilih'); setNav(this)">📖 Teori</button>
+    <button class="nav-btn" onclick="showPage('langkah'); setNav(this)">🔢 Pemodelan</button>
+    <button class="nav-btn" onclick="showPage('simulasi'); setNav(this)">📊 Simulasi</button>
+    <button class="nav-btn" onclick="showPage('kuis'); setNav(this)">🎯 Kuis</button>
+  </div>
+</nav>
+<!-- ===== HOME PAGE ===== -->
+<div class="page active" id="page-home">
+  <div class="hero-bg-orbs">
+    <div class="orb orb1"></div>
+    <div class="orb orb2"></div>
+    <div class="orb orb3"></div>
+  </div>
+  <div class="hero-content">
+    <div class="hero-left">
+      <div class="hero-badge"><span class="badge-dot"></span> Media Pembelajaran Persamaan Diferensial</div>
+      <h1 class="hero-title">
+        <span>QRIS Predictor</span>
+      </h1>
+      <p class="hero-desc">
+        Menyusun Model Persamaan Diferensial Pertumbuhan Pengguna QRIS melalui Data Nyata dan Memprediksi Pengguna QRIS Tahun Berikutnya.
+      </p>
+      <div class="hero-cta">
+        <button class="btn-primary" onclick="showPage('menu')">
+          🚀 Mulai Belajar <span>→</span>
+        </button>
+        <button class="btn-secondary" onclick="showPage('simulasi')">
+          📊 Coba Simulasi
+        </button>
+      </div>
+      <div class="feature-pills">
+        <span class="pill">⚡ Interaktif</span>
+        <span class="pill">📐 Matematis</span>
+        <span class="pill">🎯 Kontekstual</span>
+        
+      </div>
+    </div>
+    <div class="hero-visual">
+      <div class="phone-card clearfix">
+        <div class="qr-preview">📱</div>
+        <div>
+          <div class="card-label">Total Pengguna QRIS</div>
+          <div class="card-value" id="count-up">0 Juta</div>
+          <div class="card-sub">↑ +18 juta dari 2022 - 2025</div>
+        </div>
+      </div>
+      <div class="mini-chart-card">
+        <div class="mini-chart-label">📈 Grafik Pertumbuhan Pengguna QRIS 2022–2025</div>
+        <canvas id="heroChart" height="140"></canvas>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="section-card" style="padding:16px;margin:0;text-align:center;">
+          <div style="font-size:22px;font-weight:800;color:var(--primary);">K = 70</div>
+          <div style="font-size:11px;color:var(--text-muted);font-weight:600;">Juta (kapasitas maks)</div>
+        </div>
+        <div class="section-card" style="padding:16px;margin:0;text-align:center;">
+          <div style="font-size:22px;font-weight:800;color:var(--accent);">k = 0,190</div>
+          <div style="font-size:11px;color:var(--text-muted);font-weight:600;">Laju pertumbuhan</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- ===== MENU PAGE ===== -->
+<div class="page" id="page-menu">
+  <div class="page-header">
+    <div class="page-eyebrow">🎓 QRIS Predictor</div>
+    <h2 class="page-title">Menu Utama</h2>
+    <p class="page-subtitle">Pilih menu yang ingin kamu pelajari – bebas memulai dari mana saja!</p>
+  </div>
+  <div class="menu-grid">
+    <div class="menu-card" onclick="showPage('teori-pilih')">
+      <div class="menu-icon icon-blue">📖</div>
+      <div class="menu-card-title">Teori</div>
+      <div class="menu-card-desc">Pelajari konsep dasar Persamaan Diferensial: pengertian PD, PD orde satu, metode separasi variabel, hingga karakteristik kurva logistik. Lengkap dengan konteks QRIS!</div>
+      <button class="menu-enter-btn">Masuk <span>→</span></button>
+    </div>
+    <div class="menu-card" onclick="showPage('langkah')">
+      <div class="menu-icon icon-cyan">🔢</div>
+      <div class="menu-card-title">Langkah Pemodelan</div>
+      <div class="menu-card-desc">Ikuti alur penyusunan model pertumbuhan dari data QRIS, mulai pengamatan data, asumsi, formulasi PD, penyelesaian, hingga estimasi parameter.</div>
+      <button class="menu-enter-btn">Masuk <span>→</span></button>
+    </div>
+    <div class="menu-card" onclick="showPage('simulasi')">
+      <div class="menu-icon icon-green">📊</div>
+      <div class="menu-card-title">Simulasi Pertumbuhan QRIS</div>
+      <div class="menu-card-desc">Masukkan nilai kapasitas maksimum (K), tahun awal data, dan tahun prediksi, lalu lihat grafik dan hasil prediksi model secara interaktif!</div>
+      <button class="menu-enter-btn">Masuk <span>→</span></button>
+    </div>
+    <div class="menu-card" onclick="showPage('kuis')">
+      <div class="menu-icon icon-amber">🎯</div>
+      <div class="menu-card-title">Kuis & Misi Analisis QRIS</div>
+      <div class="menu-card-desc">Uji pemahamanmu! Jawab pertanyaan seputar teori PD, asumsi model, interpretasi parameter, dan analisis pertumbuhan pengguna QRIS.</div>
+      <button class="menu-enter-btn">Masuk <span>→</span></button>
+    </div>
+  </div>
+</div>
+<!-- ===== TEORI - HALAMAN PILIHAN ===== -->
+<div class="page" id="page-teori-pilih">
+  <div class="page-header">
+    <div class="page-eyebrow">📖 Teori</div>
+    <h2 class="page-title">Pilih Jenis Materi</h2>
+    <p class="page-subtitle">Mau mulai dari konsep dasarnya, atau langsung lihat konteks nyatanya di QRIS?</p>
+  </div>
+  <div class="menu-grid">
+    <div class="menu-card" onclick="enterTeori('dasar')">
+      <div class="menu-icon icon-blue">📐</div>
+      <div class="menu-card-title">Materi Dasar</div>
+      <div class="menu-card-desc">Pelajari konsep dasar Persamaan Diferensial: pengertian PD, PD orde satu, metode separasi variabel, hingga karakteristik kurva logistik.</div>
+      <button class="menu-enter-btn">Masuk <span>→</span></button>
+    </div>
+    <div class="menu-card" onclick="enterTeori('kontekstual')">
+      <div class="menu-icon icon-cyan">💳</div>
+      <div class="menu-card-title">Materi Kontekstual</div>
+      <div class="menu-card-desc">Kenali QRIS lebih dekat: pengertian QRIS, data pertumbuhan pengguna 2022–2025, dan mengapa fenomena ini bisa dimodelkan dengan persamaan diferensial.</div>
+      <button class="menu-enter-btn">Masuk <span>→</span></button>
+    </div>
+  </div>
+</div>
+<!-- ===== TEORI PAGE ===== -->
+<div class="page" id="page-teori">
+  <div class="content-layout">
+    <div class="sidebar">
+      <button class="nav-arrow" style="margin-bottom:16px;width:100%;justify-content:center;" onclick="showPage('teori-pilih')">← Pilih Jenis Materi</button>
+      <!-- Sidebar Materi Dasar -->
+      <div id="sidebar-dasar">
+        <div class="sidebar-title">Materi Teori - Dasar</div>
+        <div class="sidebar-item active" onclick="showSection('teori','t1',this)">
+          <span class="sidebar-num">1</span> Pengertian PD
+        </div>
+        <div class="sidebar-item" onclick="showSection('teori','t2',this)">
+          <span class="sidebar-num">2</span> PD Orde Satu
+        </div>
+        <div class="sidebar-item" onclick="showSection('teori','t3',this)">
+          <span class="sidebar-num">3</span> Separasi Variabel
+        </div>
+        <div class="sidebar-item" onclick="showSection('teori','t4',this)">
+          <span class="sidebar-num">4</span> Karakteristik Logistik
+        </div>
+      </div>
+      <!-- Sidebar Materi Kontekstual -->
+      <div id="sidebar-kontekstual" style="display:none;">
+        <div class="sidebar-title">Materi Teori - Kontekstual</div>
+        <div class="sidebar-item active" onclick="showSection('teori','k1',this)">
+          <span class="sidebar-num">1</span> Mengenal QRIS
+        </div>
+        <div class="sidebar-item" onclick="showSection('teori','k2',this)">
+          <span class="sidebar-num">2</span> Data Pengguna QRIS
+        </div>
+        <div class="sidebar-item" onclick="showSection('teori','k3',this)">
+          <span class="sidebar-num">3</span> QRIS & Persamaan Diferensial
+        </div>
+      </div>
+    </div>
+    <div class="content-main">
+      <!-- ============ PANEL: MATERI DASAR ============ -->
+      <div class="subtab-panel active" id="subtab-panel-dasar">
+      <!-- T1 -->
+      <div class="content-section active" id="teori-t1">
+        <div class="section-card">
+          <div class="section-title">📘 Pengertian Persamaan Diferensial</div>
+          <div class="section-body">
+            <p><strong>Persamaan diferensial</strong> adalah jenis persamaan matematika yang menghubungkan suatu nilai dengan <em>laju perubahannya sendiri</em>. Persamaan ini membantu kita melihat dan menggambarkan fenomena nyata yang kondisinya terus berubah dari waktu ke waktu <span class="tag">Boyce & DiPrima, 2012</span>.</p>
+            <p>Secara umum, persamaan diferensial dapat dituliskan dalam bentuk:</p>
+            <div class="formula-box">
+              <div class="formula">\(F\!\left(x,\, y,\, \dfrac{dy}{dx},\, \dfrac{d^2y}{dx^2},\, \ldots,\, \dfrac{d^n y}{dx^n}\right) = 0\)</div>
+              <div class="formula-label">Bentuk umum persamaan diferensial</div>
+            </div>
+            <div class="var-legend">
+              <div class="var-legend-title">Keterangan</div>
+              <div class="var-legend-item"><span class="var-legend-sym">\(x\)</span><span class="var-legend-desc">variabel bebas</span></div>
+              <div class="var-legend-item"><span class="var-legend-sym">\(y\)</span><span class="var-legend-desc">variabel terikat, nilainya bergantung pada \(x\)</span></div>
+              <div class="var-legend-item"><span class="var-legend-sym">\(\dfrac{dy}{dx}, \dfrac{d^2y}{dx^2}, \ldots, \dfrac{d^ny}{dx^n}\)</span><span class="var-legend-desc">turunan pertama, kedua, hingga ke-\(n\) dari \(y\) terhadap \(x\)</span></div>
+              <div class="var-legend-item"><span class="var-legend-sym">\(F(\cdot)\)</span><span class="var-legend-desc">fungsi yang menghubungkan \(x\), \(y\), dan turunan-turunannya</span></div>
+            </div>
+          </div>
+          <div class="info-banner"><span class="info-icon">💡</span> <div>Dalam penelitian ini, persamaan diferensial digunakan untuk memodelkan pertumbuhan jumlah pengguna QRIS berdasarkan pola perubahan yang terjadi dari waktu ke waktu.</div></div>
+        </div>
+        <div class="page-nav">
+          <button class="nav-back-home" onclick="showPage('menu')">← Kembali ke Menu</button>
+          <button class="nav-arrow" onclick="showSection('teori','t2', document.querySelectorAll('#sidebar-dasar .sidebar-item')[1])">Selanjutnya →</button>
+        </div>
+      </div>
+      <!-- T2 -->
+      <div class="content-section" id="teori-t2">
+        <div class="section-card">
+          <div class="section-title">🔢 Persamaan Diferensial Orde Satu</div>
+          <div class="section-body">
+            <p>Persamaan diferensial orde satu adalah persamaan yang hanya melibatkan <strong>turunan pertama</strong> dari suatu fungsi. Bentuk umumnya adalah:</p>
+            <div class="formula-box">
+              <div class="formula">\(\dfrac{dy}{dx} = f(x,\, y)\)</div>
+              <div class="formula-label">Bentuk umum PD orde satu</div>
+            </div>
+            <div class="var-legend">
+              <div class="var-legend-title">Keterangan</div>
+              <div class="var-legend-item"><span class="var-legend-sym">\(x\)</span><span class="var-legend-desc">variabel bebas</span></div>
+              <div class="var-legend-item"><span class="var-legend-sym">\(y\)</span><span class="var-legend-desc">variabel terikat yang bergantung pada \(x\)</span></div>
+              <div class="var-legend-item"><span class="var-legend-sym">\(\dfrac{dy}{dx}\)</span><span class="var-legend-desc">laju perubahan \(y\) terhadap \(x\)</span></div>
+              <div class="var-legend-item"><span class="var-legend-sym">\(f(x,y)\)</span><span class="var-legend-desc">fungsi yang menyatakan hubungan antara \(x\) dan \(y\)</span></div>
+            </div>
+            <p>Bentuk tersebut menunjukkan bahwa laju perubahan \(y\) terhadap \(x\), yaitu \(\dfrac{dy}{dx}\), bergantung pada nilai \(x\) dan \(y\) itu sendiri. Dengan demikian, persamaan diferensial orde satu banyak digunakan untuk memodelkan fenomena yang berubah terhadap waktu, seperti pertumbuhan pengguna QRIS.</p>
+            <p>Dalam konteks penelitian ini, orde satu dipilih karena pertumbuhan pengguna QRIS cukup dijelaskan oleh hubungan antara <strong>jumlah pengguna</strong> dan <strong>laju pertambahannya</strong>, tanpa perlu mempertimbangkan turunan tingkat lebih tinggi.</p>
+          </div>
+        </div>
+        <div class="page-nav">
+          <button class="nav-arrow" onclick="showSection('teori','t1', document.querySelectorAll('#sidebar-dasar .sidebar-item')[0])">← Sebelumnya</button>
+          <button class="nav-arrow" onclick="showSection('teori','t3', document.querySelectorAll('#sidebar-dasar .sidebar-item')[2])">Selanjutnya →</button>
+        </div>
+      </div>
+      <!-- T3 -->
+      <div class="content-section" id="teori-t3">
+        <div class="section-card">
+          <div class="section-title">⚗️ Metode Separasi Variabel</div>
+          <div class="section-body">
+            <p>Metode separasi variabel adalah cara dasar menyelesaikan PD orde satu. Prinsipnya: <strong>pisahkan semua suku variabel \(y\) ke satu sisi</strong>, dan <strong>semua suku \(x\) ke sisi lain</strong>, lalu integralkan keduanya.</p>
+            <p>Metode ini dapat diterapkan apabila persamaan dapat ditulis dalam bentuk:</p>
+            <div class="formula-box">
+              <div class="formula">\(\dfrac{dy}{dx} = f(x) \cdot g(y)\)</div>
+              <div class="formula-label">Syarat penerapan separasi variabel</div>
+            </div>
+            <div class="var-legend">
+              <div class="var-legend-title">Keterangan</div>
+              <div class="var-legend-item"><span class="var-legend-sym">\(f(x)\)</span><span class="var-legend-desc">fungsi yang hanya bergantung pada variabel \(x\)</span></div>
+              <div class="var-legend-item"><span class="var-legend-sym">\(g(y)\)</span><span class="var-legend-desc">fungsi yang hanya bergantung pada variabel \(y\)</span></div>
+            </div>
+          </div>
+          <div style="margin-top:20px;">
+            <div class="info-banner"><span class="info-icon">📋</span><div><strong>Sistematika Penyelesaian:</strong></div></div>
+            <ol class="step-list" style="margin-top:12px;">
+              <li><div class="step-content"><div class="step-title">Tulis bentuk umum PD</div>Pastikan PD dapat difaktorkan menjadi perkalian fungsi \(x\) dan fungsi \(y\): \(\dfrac{dy}{dx} = f(x)\cdot g(y)\)</div></li>
+              <li><div class="step-content"><div class="step-title">Pisahkan variabel</div>Pindahkan semua suku \(y\) ke kiri dan \(x\) ke kanan: \(\dfrac{dy}{g(y)} = f(x)\,dx\)</div></li>
+              <li><div class="step-content"><div class="step-title">Integralkan kedua ruas</div>\(\displaystyle\int \frac{dy}{g(y)} = \int f(x)\,dx\), integralkan ruas kiri terhadap \(y\) dan ruas kanan terhadap \(x\)</div></li>
+              <li><div class="step-content"><div class="step-title">Peroleh solusi umum</div>\(H(y) = F(x) + C\), di mana \(C\) adalah konstanta integral yang nilainya belum ditentukan</div></li>
+            </ol>
+          </div>
+        </div>
+        <div class="page-nav">
+          <button class="nav-arrow" onclick="showSection('teori','t2', document.querySelectorAll('#sidebar-dasar .sidebar-item')[1])">← Sebelumnya</button>
+          <button class="nav-arrow" onclick="showSection('teori','t4', document.querySelectorAll('#sidebar-dasar .sidebar-item')[3])">Selanjutnya →</button>
+        </div>
+      </div>
+      <!-- T4 -->
+      <div class="content-section" id="teori-t4">
+        <div class="section-card">
+          <div class="section-title">🌱 Karakteristik Logistik</div>
+          <div class="section-body">
+            <p>Model pertumbuhan eksponensial murni mengasumsikan laju pertumbuhan sebanding dengan jumlah yang ada, tanpa batas atas:</p>
+            <div class="formula-box">
+              <div class="formula">\(\dfrac{dN}{dt} = kN \;\Rightarrow\; N(t) = N_0\, e^{kt}\)</div>
+              <div class="formula-label">Model eksponensial murni (tanpa batas)</div>
+            </div>
+            <div class="var-legend">
+              <div class="var-legend-title">Keterangan</div>
+              <div class="var-legend-item"><span class="var-legend-sym">\(N(t)\)</span><span class="var-legend-desc">jumlah pengguna pada waktu \(t\)</span></div>
+              <div class="var-legend-item"><span class="var-legend-sym">\(N_0\)</span><span class="var-legend-desc">jumlah pengguna mula-mula (saat \(t=0\))</span></div>
+              <div class="var-legend-item"><span class="var-legend-sym">\(t\)</span><span class="var-legend-desc">waktu (dalam satuan kuartal)</span></div>
+              <div class="var-legend-item"><span class="var-legend-sym">\(k\)</span><span class="var-legend-desc">konstanta laju pertumbuhan</span></div>
+            </div>
+            <p>Pada kenyataannya, pertumbuhan suatu populasi atau pengguna tidak bisa terus naik tanpa batas, selalu ada titik jenuh. Model <strong>logistik</strong> menambahkan batas daya tampung (kapasitas maksimum) \(K\), sehingga laju pertumbuhan melambat ketika \(N\) mendekati \(K\):</p>
+            <div class="formula-box">
+              <div class="formula">\(\dfrac{dN}{dt} = kN\!\left(1 - \dfrac{N}{K}\right)\)</div>
+              <div class="formula-label">Persamaan diferensial logistik</div>
+            </div>
+            <div class="var-legend">
+              <div class="var-legend-title">Keterangan</div>
+              <div class="var-legend-item"><span class="var-legend-sym">\(N\)</span><span class="var-legend-desc">jumlah pengguna pada suatu waktu</span></div>
+              <div class="var-legend-item"><span class="var-legend-sym">\(\dfrac{dN}{dt}\)</span><span class="var-legend-desc">laju pertumbuhan jumlah pengguna terhadap waktu</span></div>
+              <div class="var-legend-item"><span class="var-legend-sym">\(k\)</span><span class="var-legend-desc">konstanta laju pertumbuhan</span></div>
+              <div class="var-legend-item"><span class="var-legend-sym">\(K\)</span><span class="var-legend-desc">kapasitas maksimum (batas atas jumlah pengguna)</span></div>
+              <div class="var-legend-item"><span class="var-legend-sym">\(1-\dfrac{N}{K}\)</span><span class="var-legend-desc">faktor pengereman, mendekati nol saat \(N\) mendekati \(K\)</span></div>
+            </div>
+            <p>Dengan metode separasi variabel, solusi umum persamaan ini berbentuk kurva-S (sigmoid).</p>
+            <p><strong>Ciri-ciri utama kurva logistik:</strong></p>
+            <ol class="step-list" style="margin-top:8px;">
+              <li><div class="step-content"><div class="step-title">Tumbuh lambat di awal</div>Saat \(N\) masih jauh dari \(K\), faktor \(\left(1-\dfrac{N}{K}\right)\approx 1\), sehingga pertumbuhan menyerupai eksponensial.</div></li>
+              <li><div class="step-content"><div class="step-title">Mengalami akselerasi</div>Pertumbuhan semakin cepat hingga melewati titik tengah kurva (titik belok), yaitu saat \(N=\dfrac{K}{2}\).</div></li>
+              <li><div class="step-content"><div class="step-title">Melambat mendekati \(K\)</div>Ketika \(N\to K\), faktor \(\left(1-\dfrac{N}{K}\right)\to 0\) sehingga \(\dfrac{dN}{dt}\to 0\) dan kurva mendatar (saturasi).</div></li>
+              <li><div class="step-content"><div class="step-title">Asimtot di \(N=K\)</div>Nilai \(N(t)\) tidak akan pernah melampaui \(K\), hanya mendekatinya seiring \(t\to\infty\), yaitu \(\displaystyle\lim_{t\to\infty} N(t) = K\).</div></li>
+            </ol>
+          </div>
+        </div>
+        <div class="page-nav">
+          <button class="nav-arrow" onclick="showSection('teori','t3', document.querySelectorAll('#sidebar-dasar .sidebar-item')[2])">← Sebelumnya</button>
+          <button class="nav-back-home" onclick="showPage('teori-pilih')">Kembali ke Halaman Awal →</button>
+        </div>
+      </div>
+      </div>
+      <!-- ============ PANEL: MATERI KONTEKSTUAL ============ -->
+      <div class="subtab-panel" id="subtab-panel-kontekstual">
+      <!-- K1 -->
+      <div class="content-section active" id="teori-k1">
+        <div class="section-card">
+          <div class="section-title">💳 Mengenal QRIS</div>
+          <div class="section-body">
+            <div class="qris-def-card">
+              <div class="qris-def-icon">📱</div>
+              <div>
+                <p style="margin-bottom:6px;"><strong>QRIS (Quick Response Code Indonesian Standard)</strong> adalah standar kode QR nasional untuk pembayaran digital yang diluncurkan oleh Bank Indonesia bersama industri sistem pembayaran pada <strong>17 Agustus 2019</strong>, namun baru mulai diberlakukan dan disebarluaskan secara nasional kepada masyarakat pada <strong>1 Januari 2020</strong>.</p>
+                <p style="margin-bottom:0;">QRIS menyatukan berbagai kode QR dari banyak penyedia jasa pembayaran (bank maupun non-bank/fintech) menjadi <strong>satu kode QR tunggal</strong>, sehingga satu kode dapat dipindai oleh aplikasi pembayaran apa pun, baik mobile banking, e-wallet, maupun dompet digital lainnya.</p>
+              </div>
+            </div>
+            <p>Tujuan utama hadirnya QRIS adalah mendorong <strong>inklusi keuangan digital</strong> di Indonesia, mempermudah transaksi nontunai bagi masyarakat dan pelaku usaha (termasuk UMKM), serta menciptakan ekosistem pembayaran yang lebih efisien, aman, dan saling terhubung (interoperable).</p>
+            <p>Sejak diluncurkan, jumlah pengguna QRIS tumbuh sangat pesat, terutama didorong oleh percepatan transformasi digital, perluasan jangkauan merchant (pedagang), dan kebijakan inklusi keuangan dari Bank Indonesia. Pertumbuhan inilah yang akan kita pelajari dan modelkan secara matematis pada materi berikutnya.</p>
+            <p>Penyusunan model persamaan diferensial dalam penelitian ini dilakukan berdasarkan pola pertumbuhan pengguna QRIS periode 2022-2025.</p>
+          </div>
+          <div class="info-banner"><span class="info-icon">🏛️</span><div>QRIS dikembangkan dan diawasi oleh <strong>Bank Indonesia (BI)</strong> bersama <strong>Asosiasi Sistem Pembayaran Indonesia (ASPI)</strong> sebagai bagian dari Blueprint Sistem Pembayaran Indonesia.</div></div>
+        </div>
+        <div class="page-nav">
+          <button class="nav-back-home" onclick="showPage('teori-pilih')">← Kembali ke Halaman Awal</button>
+          <button class="nav-arrow" onclick="showSection('teori','k2', document.querySelectorAll('#sidebar-kontekstual .sidebar-item')[1])">Selanjutnya →</button>
+        </div>
+      </div>
+      <!-- K2 -->
+      <div class="content-section" id="teori-k2">
+        <div class="section-card">
+          <div class="section-title">📈 Data Pengguna QRIS 2022–2025</div>
+          <div class="section-body">
+            <p>Berikut data jumlah pengguna QRIS di Indonesia per kuartal, dari <strong>Q1 2022</strong> hingga <strong>Q4 2025</strong>, berdasarkan publikasi Bank Indonesia (BI) dan Asosiasi Sistem Pembayaran Indonesia (ASPI):</p>
+            <div class="ctx-chart-card">
+              <div class="ctx-chart-title">📊 Pertumbuhan Pengguna QRIS per Kuartal (dalam juta)</div>
+              <canvas id="ctxChart" height="170"></canvas>
+            </div>
+            <div class="ctx-stat-row">
+              <div class="ctx-stat">
+                <div class="ctx-stat-year">2022</div>
+                <div class="ctx-stat-val">18 → 29</div>
+                <div class="ctx-stat-add">+11 juta</div>
+              </div>
+              <div class="ctx-stat">
+                <div class="ctx-stat-year">2023</div>
+                <div class="ctx-stat-val">32 → 46</div>
+                <div class="ctx-stat-add">+14 juta</div>
+              </div>
+              <div class="ctx-stat">
+                <div class="ctx-stat-year">2024</div>
+                <div class="ctx-stat-val">48 → 55</div>
+                <div class="ctx-stat-add">+7 juta</div>
+              </div>
+              <div class="ctx-stat">
+                <div class="ctx-stat-year">2025</div>
+                <div class="ctx-stat-val">56 → 60</div>
+                <div class="ctx-stat-add">+4 juta</div>
+              </div>
+            </div>
+            <p>Polanya cukup jelas: pertumbuhan <strong>sangat cepat</strong> di 2022–2023 (fase awal adopsi), lalu mulai <strong>melandai</strong> di 2024–2025 seiring pasar yang semakin jenuh. Pola "cepat lalu melambat" inilah ciri khas kurva pertumbuhan yang dibatasi oleh suatu kapasitas maksimum.</p>
+          </div>
+          <div class="info-banner"><span class="info-icon">🔍</span><div>Sumber: Bank Indonesia (BI) & Asosiasi Sistem Pembayaran Indonesia (ASPI), data jumlah pengguna QRIS per kuartal 2022–2025.</div></div>
+        </div>
+        <div class="page-nav">
+          <button class="nav-arrow" onclick="showSection('teori','k1', document.querySelectorAll('#sidebar-kontekstual .sidebar-item')[0])">← Sebelumnya</button>
+          <button class="nav-arrow" onclick="showSection('teori','k3', document.querySelectorAll('#sidebar-kontekstual .sidebar-item')[2])">Selanjutnya →</button>
+        </div>
+      </div>
+      <!-- K3 -->
+      <div class="content-section" id="teori-k3">
+        <div class="section-card">
+          <div class="section-title">🔗 Mengapa QRIS Dapat Dimodelkan dengan Persamaan Diferensial?</div>
+          <div class="section-body">
+            <p>Pertumbuhan jumlah pengguna QRIS adalah fenomena yang <strong>berubah secara kontinu terhadap waktu</strong>, sehingga laju perubahannya, yaitu \(\dfrac{dN}{dt}\) (perubahan jumlah pengguna \(N\) tiap satuan waktu \(t\)), dapat dijadikan objek pemodelan matematis melalui persamaan diferensial. Berikut beberapa alasan utamanya:</p>
+            <div class="reason-grid">
+              <div class="reason-card">
+                <div class="reason-num">1</div>
+                <div class="reason-text"><strong>Berubah kontinu terhadap waktu.</strong> Jumlah pengguna QRIS terus bertambah dari kuartal ke kuartal, bukan nilai statis, cocok dimodelkan sebagai fungsi \(N(t)\) yang bergantung pada waktu.</div>
+              </div>
+              <div class="reason-card">
+                <div class="reason-num">2</div>
+                <div class="reason-text"><strong>Laju pertambahan tidak konstan.</strong> Data menunjukkan kenaikan tidak linear: cepat di 2022-2023, melambat di 2024-2025, pola yang hanya bisa ditangkap lewat hubungan \(N\) dengan turunannya, bukan persamaan aljabar biasa.</div>
+              </div>
+              <div class="reason-card">
+                <div class="reason-num">3</div>
+                <div class="reason-text"><strong>Ada batas pertumbuhan (kapasitas maksimum).</strong> Pengguna tidak mungkin bertambah tanpa batas, dibatasi oleh jumlah penduduk usia produktif, akses smartphone, dan internet. Inilah konsep kapasitas maksimum \(K\) dalam PD.</div>
+              </div>
+              <div class="reason-card">
+                <div class="reason-num">4</div>
+                <div class="reason-text"><strong>Pola data menyerupai kurva-S.</strong> Tumbuh lambat → cepat → melambat lagi adalah ciri khas solusi PD logistik, sehingga PD menjadi alat yang tepat untuk menjelaskan sekaligus memprediksi datanya.</div>
+              </div>
+            </div>
+            <p style="margin-top:18px;">Dengan menyusun \(\dfrac{dN}{dt}\) sebagai fungsi dari \(N\) (berdasarkan asumsi-asumsi yang masuk akal), kita dapat memperoleh sebuah persamaan diferensial yang setelah diselesaikan akan menghasilkan model matematis \(N(t)\), yang kemudian bisa dipakai untuk <strong>memprediksi jumlah pengguna QRIS di tahun-tahun berikutnya</strong>.</p>
+          </div>
+          <div class="info-banner"><span class="info-icon">➡️</span><div>Langkah penyusunan model selengkapnya, dari pengamatan data, asumsi, formulasi PD, hingga penyelesaiannya, dapat dipelajari pada menu <strong>Pemodelan</strong>.</div></div>
+        </div>
+        <div class="page-nav">
+          <button class="nav-arrow" onclick="showSection('teori','k2', document.querySelectorAll('#sidebar-kontekstual .sidebar-item')[1])">← Sebelumnya</button>
+          <button class="nav-back-home" onclick="showPage('langkah')">Lanjut ke Pemodelan →</button>
+        </div>
+      </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- ===== LANGKAH PAGE ===== -->
+<div class="page" id="page-langkah">
+  <div class="content-layout">
+    <div class="sidebar">
+      <div class="sidebar-title">Langkah Pemodelan</div>
+      <div class="sidebar-item active" onclick="showSection('langkah','l1',this)"><span class="sidebar-num">1</span> Amati Data QRIS</div>
+      <div class="sidebar-item" onclick="showSection('langkah','l2',this)"><span class="sidebar-num">2</span> Susun Asumsi</div>
+      <div class="sidebar-item" onclick="showSection('langkah','l3',this)"><span class="sidebar-num">3</span> Formulasi Model PD</div>
+      <div class="sidebar-item" onclick="showSection('langkah','l4',this)"><span class="sidebar-num">4</span> Penyelesaian PD</div>
+      <div class="sidebar-item" onclick="showSection('langkah','l5',this)"><span class="sidebar-num">5</span> Estimasi Parameter</div>
+      <div class="sidebar-item" onclick="showSection('langkah','l6',this)"><span class="sidebar-num">6</span> Verifikasi Model</div>
+    </div>
+    <div class="content-main">
+      <!-- L1 -->
+      <div class="content-section active" id="langkah-l1">
+        <div class="section-card">
+          <div class="section-title">📊 Langkah 1: Amati Data QRIS</div>
+          <div class="section-body">
+            <p>Data berikut adalah jumlah pengguna QRIS per kuartal dari 2022–2025, bersumber dari <strong>ASPI</strong> yang dipublikasikan melalui <strong>Pusat Data Kontan</strong>.</p>
+            <p>Perhatikan pola pertumbuhannya, apakah laju pertambahan pengguna selalu sama di setiap periode?</p>
+          </div>
+          <div style="overflow-x:auto;">
+            <table class="data-table">
+              <thead><tr><th>t</th><th>Periode</th><th>Pengguna (Juta)</th><th>Pertambahan</th></tr></thead>
+              <tbody id="dataTable"></tbody>
+            </table>
+          </div>
+          <div class="info-banner" style="margin-top:20px;"><span class="info-icon">🔍</span><div>Perhatikan: Pada 2022-2023, pertumbuhan berlangsung sangat cepat (+28 juta). Namun pada 2024-2025, pertumbuhannya melambat (+14 juta). Polanya tidak linier, inilah yang mendorong penggunaan persamaan diferensial!</div></div>
+          <canvas id="dataChart" height="180" style="margin-top:20px;"></canvas>
+        </div>
+        <div class="page-nav">
+          <button class="nav-back-home" onclick="showPage('menu')">← Kembali ke Menu</button>
+          <button class="nav-arrow" onclick="showSection('langkah','l2', document.querySelectorAll('#page-langkah .sidebar-item')[1])">Selanjutnya →</button>
+        </div>
+      </div>
+      <!-- L2 -->
+      <div class="content-section" id="langkah-l2">
+        <div class="section-card">
+          <div class="section-title">🧠 Langkah 2: Susun Asumsi Model</div>
+          <div class="section-body">
+            <p>Penyusunan model persamaan diferensial dilakukan berdasarkan pola pertumbuhan pengguna QRIS periode 2022-2025. Pada simulasi pertumbuhan QRIS, hasil prediksi dapat dilihat berdasarkan tahun prediksi dan kuartal ke berapa yang dipilih.</p>
+            <div class="var-legend">
+              <div class="var-legend-title">Keterangan</div>
+              <div class="var-legend-item"><span class="var-legend-sym">\(N(t)\)</span><span class="var-legend-desc">jumlah pengguna QRIS</span></div>
+              <div class="var-legend-item"><span class="var-legend-sym">\(t\)</span><span class="var-legend-desc">waktu pengamatan</span></div>
+              <div class="var-legend-item"><span class="var-legend-sym">\(K\)</span><span class="var-legend-desc">jumlah maksimal pengguna QRIS</span></div>
+              <div class="var-legend-item"><span class="var-legend-sym">\(k\)</span><span class="var-legend-desc">tingkat pertumbuhan pengguna QRIS</span></div>
+              <div class="var-legend-item"><span class="var-legend-sym">\(A\)</span><span class="var-legend-desc">konstanta</span></div>
+            </div>
+          </div>
+          <ul class="assumption-list" style="margin-top:16px;">
+            <li>
+              <span class="assump-icon">1️⃣</span>
+              <div><strong>Pertumbuhan sebanding dengan jumlah pengguna aktif.</strong><br>Semakin banyak pengguna QRIS, semakin besar peluang orang lain ikut mencoba karena melihat atau mendapat rekomendasi dari orang sekitarnya. Secara matematis: laju pertumbuhan \(\frac{dN}{dt}\) sebanding dengan \(N(t)\).</div>
+            </li>
+            <li>
+              <span class="assump-icon">2️⃣</span>
+              <div><strong>Terdapat batas kapasitas maksimum (K).</strong><br>Pertumbuhan pengguna pasti akan menemui titik jenuh, dibatasi oleh jumlah penduduk usia produktif dan kepemilikan smartphone. Batas ini dinotasikan sebagai K (carrying capacity).</div>
+            </li>
+            <li>
+              <span class="assump-icon">3️⃣</span>
+              <div><strong>Laju pertumbuhan melambat mendekati batas kapasitas.</strong><br>Ketika pengguna masih jauh dari K, pertumbuhan berjalan cepat. Saat pengguna mendekati K, sisa calon pengguna yang belum bergabung semakin sedikit, laju otomatis menurun.</div>
+            </li>
+          </ul>
+        </div>
+        <div class="page-nav">
+          <button class="nav-arrow" onclick="showSection('langkah','l1', document.querySelectorAll('#page-langkah .sidebar-item')[0])">← Sebelumnya</button>
+          <button class="nav-arrow" onclick="showSection('langkah','l3', document.querySelectorAll('#page-langkah .sidebar-item')[2])">Selanjutnya →</button>
+        </div>
+      </div>
+      <!-- L3 -->
+      <div class="content-section" id="langkah-l3">
+        <div class="section-card">
+          <div class="section-title">📝 Langkah 3: Formulasi Model PD</div>
+          <div class="section-body">
+            <p>Dari ketiga asumsi yang telah ditetapkan, model persamaan diferensial disusun secara bertahap:</p>
+            <p><strong>Asumsi 1</strong> menyatakan laju pertumbuhan sebanding dengan \(N(t)\):</p>
+            <div class="formula-box">
+              <div class="formula">\(\dfrac{dN}{dt} = kN\)</div>
+              <div class="formula-label">Model awal (tanpa batas kapasitas)</div>
+            </div>
+            <div class="var-legend">
+              <div class="var-legend-title">Keterangan</div>
+              <div class="var-legend-item"><span class="var-legend-sym">\(N\)</span><span class="var-legend-desc">jumlah pengguna QRIS pada suatu waktu</span></div>
+              <div class="var-legend-item"><span class="var-legend-sym">\(t\)</span><span class="var-legend-desc">waktu (dalam satuan kuartal)</span></div>
+              <div class="var-legend-item"><span class="var-legend-sym">\(k\)</span><span class="var-legend-desc">konstanta laju pertumbuhan</span></div>
+            </div>
+            <p><strong>Asumsi 2 & 3</strong> menambahkan faktor pembatas K. Ketika N mendekati K, faktor (1 - N/K) mendekati 0, sehingga laju pertumbuhan melambat:</p>
+            <div class="formula-box">
+              <div class="formula">\(\dfrac{dN}{dt} = kN\!\left(1 - \dfrac{N}{K}\right)\)</div>
+              <div class="formula-label">Model akhir dengan kapasitas maksimum K</div>
+            </div>
+            <div class="var-legend">
+              <div class="var-legend-title">Keterangan</div>
+              <div class="var-legend-item"><span class="var-legend-sym">\(N\)</span><span class="var-legend-desc">jumlah pengguna QRIS pada suatu waktu</span></div>
+              <div class="var-legend-item"><span class="var-legend-sym">\(k\)</span><span class="var-legend-desc">konstanta laju pertumbuhan</span></div>
+              <div class="var-legend-item"><span class="var-legend-sym">\(K\)</span><span class="var-legend-desc">kapasitas maksimum (batas atas jumlah pengguna)</span></div>
+            </div>
+            <p>Model ini menggambarkan pertumbuhan yang awalnya cepat, lalu melambat saat mendekati kapasitas maksimum, sesuai dengan pola data QRIS 2022-2025.</p>
+          </div>
+        </div>
+        <div class="page-nav">
+          <button class="nav-arrow" onclick="showSection('langkah','l2', document.querySelectorAll('#page-langkah .sidebar-item')[1])">← Sebelumnya</button>
+          <button class="nav-arrow" onclick="showSection('langkah','l4', document.querySelectorAll('#page-langkah .sidebar-item')[3])">Selanjutnya →</button>
+        </div>
+      </div>
+      <!-- L4 -->
+      <div class="content-section" id="langkah-l4">
+        <div class="section-card">
+          <div class="section-title">🧮 Langkah 4: Penyelesaian PD</div>
+          <div class="section-body">
+            <p>Persamaan \(\dfrac{dN}{dt} = kN\!\left(1 - \dfrac{N}{K}\right)\) diselesaikan dengan <strong>metode separasi variabel</strong>. Berikut alurnya:</p>
+          </div>
+          <ol class="step-list" style="margin-top:16px;">
+            <li><div class="step-content"><div class="step-title">Pisahkan variabel</div>Kedua ruas dibagi \(N\!\left(1-\dfrac{N}{K}\right)\):<br>\(\dfrac{dN}{N\!\left(1-\dfrac{N}{K}\right)} = k\,dt\)</div></li>
+            <li><div class="step-content"><div class="step-title">Transformasi ke pecahan parsial</div>Suku kiri diuraikan: \(\dfrac{1}{N\!\left(1-\dfrac{N}{K}\right)} = \dfrac{K}{N(K-N)} = \dfrac{1}{N} + \dfrac{1}{K-N}\)</div></li>
+            <li><div class="step-content"><div class="step-title">Integralkan kedua ruas</div>\(\displaystyle\int\!\left(\frac{1}{N} + \frac{1}{K-N}\right)dN = \int k\,dt \;\Rightarrow\; \ln|N| - \ln|K-N| = kt + C\)</div></li>
+            <li><div class="step-content"><div class="step-title">Gunakan sifat logaritma</div>\(\ln\!\left|\dfrac{N}{K-N}\right| = kt + C \;\Rightarrow\; \dfrac{N}{K-N} = C\,e^{kt}\)</div></li>
+            <li><div class="step-content"><div class="step-title">Selesaikan untuk N</div>Atur ulang: \(N = \dfrac{K\,C\,e^{kt}}{1 + C\,e^{kt}}\), lagi dibagi \(C\,e^{kt}\) diperoleh bentuk akhir:</div></li>
+          </ol>
+          <div class="formula-box" style="margin-top:16px;">
+            <div class="formula">\(N(t) = \dfrac{K}{1 + A\,e^{-kt}}\)</div>
+            <div class="formula-label">Solusi umum persamaan diferensial</div>
+          </div>
+          <div class="var-legend">
+            <div class="var-legend-title">Keterangan</div>
+            <div class="var-legend-item"><span class="var-legend-sym">\(N(t)\)</span><span class="var-legend-desc">jumlah pengguna QRIS pada waktu \(t\)</span></div>
+            <div class="var-legend-item"><span class="var-legend-sym">\(K\)</span><span class="var-legend-desc">kapasitas maksimum (batas atas jumlah pengguna)</span></div>
+            <div class="var-legend-item"><span class="var-legend-sym">\(A\)</span><span class="var-legend-desc">konstanta baru, \(A = 1/C\), ditentukan dari kondisi awal \(N(0)=N_0\)</span></div>
+            <div class="var-legend-item"><span class="var-legend-sym">\(k\)</span><span class="var-legend-desc">konstanta laju pertumbuhan</span></div>
+            <div class="var-legend-item"><span class="var-legend-sym">\(t\)</span><span class="var-legend-desc">waktu (dalam satuan kuartal)</span></div>
+          </div>
+        </div>
+        <div class="page-nav">
+          <button class="nav-arrow" onclick="showSection('langkah','l3', document.querySelectorAll('#page-langkah .sidebar-item')[2])">← Sebelumnya</button>
+          <button class="nav-arrow" onclick="showSection('langkah','l5', document.querySelectorAll('#page-langkah .sidebar-item')[4])">Selanjutnya →</button>
+        </div>
+      </div>
+      <!-- L5 -->
+      <div class="content-section" id="langkah-l5">
+        <div class="section-card">
+          <div class="section-title">🎯 Langkah 5: Estimasi Parameter</div>
+          <div class="section-body">
+            <p>Dari solusi umum \(N(t) = \dfrac{K}{1 + A\,e^{-kt}}\), kita estimasi tiga parameter:</p>
+          </div>
+          <div class="param-grid">
+            <div class="param-card">
+              <div class="param-symbol">K</div>
+              <div class="param-value">70 juta</div>
+              <div class="param-desc">Kapasitas maksimum. Ditetapkan berdasarkan data aktual (60 juta di Q4 2025) dan pertimbangan inklusi keuangan digital Indonesia. K > 60 juta, diestimasi 70 juta.</div>
+            </div>
+            <div class="param-card">
+              <div class="param-symbol">A</div>
+              <div class="param-value">≈ 2,89</div>
+              <div class="param-desc">Dari kondisi awal t=0: N(0) = 18 juta → 18 = 70/(1+A) → A = 52/18 ≈ 2,89</div>
+            </div>
+            <div class="param-card">
+              <div class="param-symbol">k</div>
+              <div class="param-value">0,190</div>
+              <div class="param-desc">Dari data \(t=15\): \(N(15) = 60\) juta \(\Rightarrow 60 = \dfrac{70}{1+2{,}89\,e^{-15k}} \Rightarrow k \approx 0{,}190\) per kuartal</div>
+            </div>
+          </div>
+          <div class="formula-box" style="margin-top:24px;">
+            <div class="formula">\(N(t) = \dfrac{70}{1 + 2{,}89\,e^{-0{,}190\,t}}\)</div>
+            <div class="formula-label">Model Pertumbuhan Pengguna QRIS Indonesia</div>
+          </div>
+          <div class="var-legend">
+            <div class="var-legend-title">Keterangan</div>
+            <div class="var-legend-item"><span class="var-legend-sym">\(N(t)\)</span><span class="var-legend-desc">prediksi jumlah pengguna QRIS (juta) pada waktu \(t\)</span></div>
+            <div class="var-legend-item"><span class="var-legend-sym">\(t\)</span><span class="var-legend-desc">waktu dalam kuartal, dihitung sejak \(t=0\) di Q1 2022</span></div>
+            <div class="var-legend-item"><span class="var-legend-sym">\(70\)</span><span class="var-legend-desc">nilai \(K\), kapasitas maksimum (juta pengguna)</span></div>
+            <div class="var-legend-item"><span class="var-legend-sym">\(2{,}89\)</span><span class="var-legend-desc">nilai \(A\), konstanta dari kondisi awal</span></div>
+            <div class="var-legend-item"><span class="var-legend-sym">\(0{,}190\)</span><span class="var-legend-desc">nilai \(k\), konstanta laju pertumbuhan per kuartal</span></div>
+          </div>
+        </div>
+        <div class="page-nav">
+          <button class="nav-arrow" onclick="showSection('langkah','l4', document.querySelectorAll('#page-langkah .sidebar-item')[3])">← Sebelumnya</button>
+          <button class="nav-arrow" onclick="showSection('langkah','l6', document.querySelectorAll('#page-langkah .sidebar-item')[5])">Selanjutnya →</button>
+        </div>
+      </div>
+      <!-- L6 -->
+      <div class="content-section" id="langkah-l6">
+        <div class="section-card">
+          <div class="section-title">✅ Langkah 6: Verifikasi Model</div>
+          <div class="section-body">
+            <p>Berikut perbandingan hasil model \(N(t) = \dfrac{70}{1+2{,}89\,e^{-0{,}190t}}\) dengan data aktual QRIS. Untuk melihat seberapa dekat hasil model terhadap data nyata, dihitung <strong>selisih</strong> antara data aktual dan hasil model pada setiap titik waktu:</p>
+            <div class="formula-box">
+              <div class="formula">\(\text{Selisih} = \left|\text{Aktual} - N(t)\right|\)</div>
+              <div class="formula-label">Rumus selisih mutlak antara data aktual dengan hasil model</div>
+            </div>
+            <div class="var-legend">
+              <div class="var-legend-title">Keterangan</div>
+              <div class="var-legend-item"><span class="var-legend-sym">Aktual</span><span class="var-legend-desc">jumlah pengguna QRIS sesungguhnya (data observasi, dalam juta)</span></div>
+              <div class="var-legend-item"><span class="var-legend-sym">\(N(t)\)</span><span class="var-legend-desc">jumlah pengguna hasil perhitungan model pada waktu \(t\) yang sama</span></div>
+            </div>
+          </div>
+          <div style="overflow-x:auto;">
+            <table class="data-table">
+              <thead><tr><th>t</th><th>Periode</th><th>Model N(t)</th><th>Aktual</th><th>Selisih</th></tr></thead>
+              <tbody id="verifTable"></tbody>
+            </table>
+          </div>
+          <div style="display:flex;gap:18px;flex-wrap:wrap;align-items:center;margin-top:12px;font-size:12px;color:var(--text-muted);">
+            <span style="display:flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:50%;background:#10B981;display:inline-block;"></span> Selisih kecil (&lt; 2 juta)</span>
+            <span style="display:flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:50%;background:#F59E0B;display:inline-block;"></span> Selisih sedang (2–4 juta)</span>
+            <span style="display:flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:50%;background:#EF4444;display:inline-block;"></span> Selisih besar (&gt; 4 juta)</span>
+          </div>
+          <canvas id="verifChart" height="180" style="margin-top:20px;"></canvas>
+        </div>
+        <div class="page-nav">
+          <button class="nav-arrow" onclick="showSection('langkah','l5', document.querySelectorAll('#page-langkah .sidebar-item')[4])">← Sebelumnya</button>
+          <button class="nav-back-home" onclick="showPage('menu')">Kembali ke Menu →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- ===== SIMULASI PAGE ===== -->
+<div class="page" id="page-simulasi">
+  <div class="simulator-layout">
+    <h1 class="sim-title">📊 Simulasi Pertumbuhan QRIS</h1>
+    <p class="sim-subtitle">Masukkan parameter berikut untuk melihat prediksi jumlah pengguna QRIS menggunakan model persamaan diferensial.</p>
+    <div class="sim-grid">
+      <div>
+        <div class="sim-panel">
+          <div class="sim-panel-title">⚙️ Input Parameter</div>
+          <div class="input-group">
+            <label class="input-label">Kapasitas Maksimum K (juta pengguna)</label>
+            <input type="number" class="input-field" id="kInput" value="70" step="1" oninput="updateKVal()">
+            <div class="input-hint">💡 Ketik bebas nilai K. Nilai K harus &gt; 60 juta (data terakhir 2025) agar model logistik valid.</div>
+            <div class="input-hint" id="kWarning" style="color:var(--danger);font-weight:600;display:none;margin-top:6px;"></div>
+          </div>
+          <div class="input-group">
+            <label class="input-label">Data Awal Pengamatan (\(N_0\) saat \(t=0\))</label>
+            <select class="input-field" id="dataAwalSelect" onchange="onDataAwalChange()"></select>
+            <div class="input-hint">Pilih titik kuartal data observasi (Q1 2022 – Q4 2025) yang akan dipakai sebagai \(N_0\) dan tahun awal \(t=0\).</div>
+            <div class="formula-box" style="margin-top:14px;padding:14px 16px;">
+              <div class="formula" style="font-size:16px;">\(N(t) = \dfrac{K}{1 + A\,e^{-kt}}\)</div>
+              <div class="formula-label">Solusi umum model (sebelum estimasi parameter dimasukkan)</div>
+            </div>
+            <div class="var-legend" style="margin-top:0;">
+              <div class="var-legend-title">Keterangan</div>
+              <div class="var-legend-item"><span class="var-legend-sym">\(N(t)\)</span><span class="var-legend-desc">Prediksi jumlah pengguna QRIS</span></div>
+              <div class="var-legend-item"><span class="var-legend-sym">\(t\)</span><span class="var-legend-desc">Waktu pengamatan</span></div>
+              <div class="var-legend-item"><span class="var-legend-sym">\(K\)</span><span class="var-legend-desc">Jumlah maksimal pengguna QRIS</span></div>
+              <div class="var-legend-item"><span class="var-legend-sym">\(k\)</span><span class="var-legend-desc">Tingkat pertumbuhan pengguna QRIS</span></div>
+              <div class="var-legend-item"><span class="var-legend-sym">\(A\)</span><span class="var-legend-desc">Konstanta yang ditentukan dari kondisi awal</span></div>
+            </div>
+          </div>
+          <div class="input-group">
+            <label class="input-label">Tahun & Kuartal Prediksi</label>
+            <div style="display:grid;grid-template-columns:1.3fr 1fr;gap:10px;">
+              <input type="number" class="input-field" id="predYear" value="2030" placeholder="Tahun">
+              <select class="input-field" id="predQuarter">
+                <option value="1">Kuartal I</option>
+                <option value="2">Kuartal II</option>
+                <option value="3">Kuartal III</option>
+                <option value="4" selected>Kuartal IV</option>
+              </select>
+            </div>
+            <div class="input-hint">Masukkan tahun, lalu pilih diprediksi sampai kuartal ke berapa (Q1–Q4)</div>
+          </div>
+          <button class="btn-calc" onclick="runSimulation()">🔢 Hitung Prediksi</button>
+          <div class="result-box" id="resultBox">
+            <div class="result-label">Prediksi Pengguna QRIS</div>
+            <div class="result-number" id="resultNumber">—</div>
+            <div class="result-label">juta pengguna</div>
+            <div class="result-formula" id="resultFormula"></div>
+          </div>
+        </div>
+        <div class="sim-panel" style="margin-top:20px;">
+          <div class="sim-panel-title">📋 Interpretasi Parameter</div>
+          <div style="font-size:13px;line-height:1.8;color:var(--text-muted);" id="paramInterpretasi">
+            <p>• <strong>K</strong> <span id="paramKVal">≈ 70</span>: Batas atas (kapasitas maksimum) jumlah pengguna yang dapat dicapai.</p>
+            <p>• <strong>A</strong> <span id="paramA">≈ 2,89</span>: Ditentukan dari kondisi awal \(N(0) = N_0\).</p>
+            <p>• <strong>k</strong> <span id="paramK">≈ 0,190</span>: Laju pertumbuhan per kuartal, ditentukan dari data aktual terakhir.</p>
+            <p style="margin-top:12px;color:var(--primary);font-weight:600;" id="paramFormula">\(N(t) = \dfrac{70}{1 + 2{,}89 \times e^{-0{,}190\,t}}\)</p>
+          </div>
+          <div class="interp-result-box" id="predInterpretasiBox" style="display:none;">
+            <strong>📌 Interpretasi Hasil Prediksi:</strong>
+            <p id="predInterpretasiText" style="margin-top:6px;"></p>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="chart-card">
+          <div class="chart-title">Grafik Prediksi Pertumbuhan QRIS</div>
+          <div class="chart-sub">Garis biru = data aktual | Garis ungu = model | Garis putus = prediksi</div>
+          <canvas id="simChart" height="320"></canvas>
+        </div>
+        <div class="chart-card" style="margin-top:20px;">
+          <div class="chart-title">Perbandingan Skenario K</div>
+          <div class="chart-sub">Pengaruh nilai K terhadap prediksi jangka panjang</div>
+          <canvas id="scenChart" height="220"></canvas>
+          <div class="interp-result-box" id="scenInterpretasiBox" style="margin-top:18px;">
+            <strong>📌 Apa Maksud Grafik Ini?</strong>
+            <p id="scenInterpretasiText" style="margin-top:6px;"></p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="page-nav" style="padding-top:24px;">
+      <button class="nav-back-home" onclick="showPage('menu')">← Kembali ke Menu</button>
+    </div>
+  </div>
+</div>
+<!-- ===== KUIS PAGE ===== -->
+<div class="page" id="page-kuis">
+  <div class="quiz-layout">
+    <div class="quiz-header">
+      <h1 style="font-size:26px;font-weight:800;margin-bottom:6px;">🎯 Kuis Misi Analisis QRIS</h1>
+      <p style="font-size:14px;color:var(--text-muted);">Jawab cepat dan tepat untuk bonus poin & combo streak! Uji pemahamanmu tentang pemodelan pertumbuhan QRIS.</p>
+    </div>
+    <div class="quiz-progress-bar"><div class="quiz-progress-fill" id="progressFill" style="width:0%"></div></div>
+    <div id="quizContainer">
+      <div class="journey-track" id="journeyTrack"></div>
+      <div class="quiz-hud">
+        <div class="hud-score">🏅 <span id="hudScore">0</span> poin</div>
+        <div class="hud-combo" id="hudCombo">🔥 <span id="hudComboNum">0</span> Combo!</div>
+        <div class="timer-ring-wrap">
+          <svg viewBox="0 0 46 46">
+            <circle class="timer-ring-bg" cx="23" cy="23" r="20"></circle>
+            <circle class="timer-ring-fg" id="timerRing" cx="23" cy="23" r="20" stroke-dasharray="125.6" stroke-dashoffset="0"></circle>
+          </svg>
+          <div class="timer-num" id="timerNum">20</div>
+        </div>
+      </div>
+      <div class="quiz-card" id="quizCard">
+        <div class="quiz-q-num" id="qNum">Pertanyaan 1 / 10</div>
+        <div class="quiz-question" id="qText"></div>
+        <div class="quiz-options" id="qOptions"></div>
+        <div class="quiz-feedback" id="qFeedback"></div>
+        <div class="quiz-next">
+          <button class="btn-primary" id="nextBtn" onclick="nextQuestion()" style="display:none;">Lanjut →</button>
+        </div>
+      </div>
+    </div>
+    <div class="quiz-score" id="quizScore">
+      <div class="score-emoji" id="scoreEmoji">🏆</div>
+      <div class="score-num" id="scoreNum">0</div>
+      <div class="score-text">dari 10 poin</div>
+      <div class="score-meta-row" style="max-width:560px;">
+        <div class="score-meta-card">
+          <div class="score-meta-label">Persentase</div>
+          <div class="score-meta-val" id="scorePct">0%</div>
+        </div>
+        <div class="score-meta-card">
+          <div class="score-meta-label">Total Poin Game</div>
+          <div class="score-meta-val" id="scoreGamePts">0</div>
+        </div>
+        <div class="score-meta-card">
+          <div class="score-meta-label">Combo Terbaik</div>
+          <div class="score-meta-val" id="scoreBestCombo">0×</div>
+        </div>
+        <div class="score-meta-card">
+          <div class="score-meta-label">Peringkat</div>
+          <div class="score-meta-val" id="scoreRank" style="font-size:15px;">-</div>
+        </div>
+      </div>
+      <div class="score-stars" id="scoreStars">⭐⭐⭐⭐⭐</div>
+      <div class="score-msg" id="scoreMsg"></div>
+      <button class="btn-restart" onclick="restartQuiz()">🔄 Ulangi Kuis</button>
+      <button class="btn-secondary" style="margin-left:12px;margin-top:0;" onclick="showPage('menu')">← Kembali ke Menu</button>
+    </div>
+  </div>
+  <div class="milestone-toast" id="milestoneToast"></div>
+</div>
+<script>
+// ===== DATA =====
+const qrisData = [
+  {t:0, period:'Q1 2022', actual:18},
+  {t:1, period:'Q2 2022', actual:21},
+  {t:2, period:'Q3 2022', actual:25},
+  {t:3, period:'Q4 2022', actual:29},
+  {t:4, period:'Q1 2023', actual:32},
+  {t:5, period:'Q2 2023', actual:37},
+  {t:6, period:'Q3 2023', actual:42},
+  {t:7, period:'Q4 2023', actual:46},
+  {t:8, period:'Q1 2024', actual:48},
+  {t:9, period:'Q2 2024', actual:51},
+  {t:10, period:'Q3 2024', actual:53},
+  {t:11, period:'Q4 2024', actual:55},
+  {t:12, period:'Q1 2025', actual:56},
+  {t:13, period:'Q2 2025', actual:57},
+  {t:14, period:'Q3 2025', actual:58},
+  {t:15, period:'Q4 2025', actual:60},
+];
+function model(t, K=70, A=2.89, k=0.190) {
+  return K / (1 + A * Math.exp(-k * t));
+}
+// ===== NAVIGATION =====
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  window.scrollTo(0,0);
+  if(name === 'langkah') initLangkah();
+  if(name === 'simulasi') initSimulasi();
+  if(name === 'kuis') initQuiz();
+  if(name === 'teori') initCtxChart();
+}
+function setNav(el) {
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+}
+function showSection(page, id, sidebarEl) {
+  document.querySelectorAll('#page-' + page + ' .content-section').forEach(s => s.classList.remove('active'));
+  document.getElementById(page + '-' + id).classList.add('active');
+  if(sidebarEl) {
+    document.querySelectorAll('#page-' + page + ' .sidebar-item').forEach(s => s.classList.remove('active'));
+    sidebarEl.classList.add('active');
+  }
+  if(page === 'langkah' && id === 'l6') buildVerifSection();
+  if(page === 'teori' && id === 'k2') initCtxChart();
+}
+function enterTeori(tab) {
+  showPage('teori');
+  showTeoriSubtab(tab);
+}
+function showTeoriSubtab(tab) {
+  document.getElementById('subtab-panel-dasar').classList.toggle('active', tab === 'dasar');
+  document.getElementById('subtab-panel-kontekstual').classList.toggle('active', tab === 'kontekstual');
+  document.getElementById('sidebar-dasar').style.display = tab === 'dasar' ? 'block' : 'none';
+  document.getElementById('sidebar-kontekstual').style.display = tab === 'kontekstual' ? 'block' : 'none';
+  window.scrollTo(0,0);
+  if(tab === 'kontekstual') initCtxChart();
+}
+let ctxChartObj = null;
+function initCtxChart() {
+  const ctx = document.getElementById('ctxChart');
+  if(!ctx || ctx.chart) return;
+  const labels = qrisData.map(d => d.period);
+  ctx.chart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Pengguna QRIS (Juta)', data: qrisData.map(d => d.actual), backgroundColor: labels.map((_,i) => {
+            const grads = ['rgba(79,70,229,0.85)','rgba(6,182,212,0.85)','rgba(16,185,129,0.85)','rgba(245,158,11,0.85)'];
+            return grads[Math.floor(i/4)];
+          }), borderRadius: 6, borderWidth: 0 }
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false },
+        tooltip: { callbacks: { label: (c) => `${c.parsed.y} juta pengguna` } }
+      },
+      scales: {
+        y: { beginAtZero: true, ticks: { callback: v => `${v}M` }, grid: { color: '#E0E7FF' } },
+        x: { ticks: { font: { size: 10 }, maxRotation: 45 }, grid: { display: false } }
+      }
+    }
+  });
+}
+// ===== HERO CHART =====
+function initHeroChart() {
+  const ctx = document.getElementById('heroChart');
+  if(!ctx || ctx.chart) return;
+  const labels = qrisData.map(d => d.period);
+  const modelVals = qrisData.map(d => model(d.t).toFixed(2));
+  ctx.chart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Data Aktual', data: qrisData.map(d=>d.actual), borderColor:'#4F46E5', backgroundColor:'rgba(79,70,229,0.1)', fill:true, tension:0.4, pointRadius:3, borderWidth:2 },
+        { label: 'Model PD', data: modelVals, borderColor:'#06B6D4', borderDash:[5,4], backgroundColor:'transparent', tension:0.4, pointRadius:2, borderWidth:2 }
+      ]
+    },
+    options: { responsive:true, plugins:{legend:{position:'bottom', labels:{font:{size:11}}}}, scales:{y:{beginAtZero:true, ticks:{font:{size:10}}}, x:{ticks:{font:{size:9}, maxRotation:45}}} }
+  });
+  // count up animation
+  let count = 0; const target = 60;
+  const el = document.getElementById('count-up');
+  const iv = setInterval(() => { count = Math.min(count+2, target); el.textContent = count + ' Juta'; if(count>=target) clearInterval(iv); }, 40);
+}
+// ===== LANGKAH =====
+let langkahInited = false;
+function initLangkah() {
+  if(langkahInited) return; langkahInited = true;
+  // Data table
+  const tbody = document.getElementById('dataTable');
+  if(tbody) {
+    tbody.innerHTML = qrisData.map((d, i) => {
+      const prev = i > 0 ? qrisData[i-1].actual : null;
+      const diff = prev ? (d.actual - prev) : '—';
+      const sign = typeof diff === 'number' ? (diff > 0 ? '+' : '') : '';
+      return `<tr><td>t=${d.t}</td><td>${d.period}</td><td><strong>${d.actual}</strong></td><td style="color:${typeof diff==='number'?'#10B981':'inherit'};font-weight:600;">${sign}${diff}</td></tr>`;
+    }).join('');
+  }
+  // Data chart
+  const ctx = document.getElementById('dataChart');
+  if(ctx && !ctx.chart) {
+    ctx.chart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: qrisData.map(d=>d.period),
+        datasets: [
+          { label: 'Pengguna Aktual (Juta)', data: qrisData.map(d=>d.actual), backgroundColor:'rgba(79,70,229,0.7)', borderRadius:6 },
+          { label: 'Model N(t)', data: qrisData.map(d=>+model(d.t).toFixed(2)), type:'line', borderColor:'#06B6D4', backgroundColor:'transparent', tension:0.4, pointRadius:4, borderWidth:2 }
+        ]
+      },
+      options: { responsive:true, plugins:{legend:{position:'bottom'}}, scales:{y:{beginAtZero:true}, x:{ticks:{maxRotation:45,font:{size:9}}}} }
+    });
+  }
+}
+function buildVerifSection() {
+  const tbody = document.getElementById('verifTable');
+  if(tbody && !tbody.innerHTML) {
+    tbody.innerHTML = qrisData.map(d => {
+      const m = model(d.t);
+      const diff = Math.abs(d.actual - m);
+      const color = diff < 2 ? '#10B981' : diff < 4 ? '#F59E0B' : '#EF4444';
+      return `<tr><td>t=${d.t}</td><td>${d.period}</td><td>${m.toFixed(2)}</td><td>${d.actual}</td><td style="color:${color};font-weight:600;">${diff.toFixed(2)}</td></tr>`;
+    }).join('');
+  }
+  const ctx = document.getElementById('verifChart');
+  if(ctx && !ctx.chart) {
+    ctx.chart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: qrisData.map(d=>d.period),
+        datasets: [
+          { label: 'Data Aktual', data: qrisData.map(d=>d.actual), borderColor:'#4F46E5', pointRadius:5, fill:false, tension:0.4, borderWidth:2 },
+          { label: 'Model N(t)', data: qrisData.map(d=>+model(d.t).toFixed(2)), borderColor:'#06B6D4', borderDash:[6,3], pointRadius:3, fill:false, tension:0.4, borderWidth:2 }
+        ]
+      },
+      options: { responsive:true, plugins:{legend:{position:'bottom'}}, scales:{y:{beginAtZero:true}, x:{ticks:{maxRotation:45, font:{size:9}}}} }
+    });
+  }
+}
+// ===== SIMULASI =====
+let simChartObj = null, scenChartObj = null;
+function initSimulasi() {
+  const sel = document.getElementById('dataAwalSelect');
+  if(sel && sel.options.length === 0) {
+    sel.innerHTML = qrisData.map((d,i) => `<option value="${i}" ${i===0?'selected':''}>${d.period}, N₀ = ${d.actual} juta</option>`).join('');
+  }
+  runSimulation();
+}
+function onDataAwalChange() {
+  runSimulation();
+}
+function updateKVal() {
+  const K = parseFloat(document.getElementById('kInput').value);
+  const lastActual = qrisData[qrisData.length - 1].actual;
+  const warn = document.getElementById('kWarning');
+  if(!warn) return;
+  if(isNaN(K)) { warn.style.display = 'none'; return; }
+  if(K <= lastActual) {
+    warn.textContent = `⚠️ K = ${K} juta ≤ data aktual terakhir (${lastActual} juta). Model logistik tidak akan valid, coba nilai K yang lebih besar.`;
+    warn.style.display = 'block';
+  } else {
+    warn.style.display = 'none';
+  }
+}
+function runSimulation() {
+  const K = parseFloat(document.getElementById('kInput').value);
+  const sel = document.getElementById('dataAwalSelect');
+  const idx = sel ? parseInt(sel.value || '0') : 0;
+  const startPoint = qrisData[idx] || qrisData[0];
+  const N0 = startPoint.actual;
+  // Parse kuartal & tahun dari periode yang dipilih, mis. "Q3 2023" -> q=3, year=2023
+  const [qStr, yStr] = startPoint.period.split(' ');
+  const startQuarter = parseInt(qStr.replace('Q',''));
+  const startYear = parseInt(yStr);
+  const predYear = parseInt(document.getElementById('predYear').value);
+  const predQuarter = parseInt(document.getElementById('predQuarter').value);
+
+  const lastActual = qrisData[qrisData.length - 1].actual; // 60
+  const lastT = qrisData[qrisData.length - 1].t; // 15
+  // t relatif terhadap titik data awal yang dipilih
+  const startT = startPoint.t;
+  const lastTRel = lastT - startT; // jarak (kuartal) dari titik awal ke data terakhir
+
+  updateKVal();
+
+  // Validate input before computing
+  if(isNaN(K) || isNaN(predYear) || isNaN(predQuarter) || N0 <= 0) {
+    document.getElementById('resultNumber').textContent = '—';
+    document.getElementById('resultFormula').innerHTML = 'Lengkapi semua input dengan angka yang valid terlebih dahulu.';
+    document.getElementById('resultBox').classList.add('show');
+    return;
+  }
+  if(K <= N0) {
+    document.getElementById('resultNumber').textContent = '—';
+    document.getElementById('resultFormula').innerHTML = `⚠️ K (${K}) harus lebih besar dari N0/data awal (${N0}) agar model logistik valid.`;
+    document.getElementById('resultBox').classList.add('show');
+    return;
+  }
+  if(K <= lastActual) {
+    document.getElementById('resultNumber').textContent = '—';
+    document.getElementById('resultFormula').innerHTML = `⚠️ K (${K}) ≤ data aktual terakhir (${lastActual} juta). Naikkan nilai K agar kurva logistik valid.`;
+    document.getElementById('resultBox').classList.add('show');
+    return;
+  }
+
+  // A from N(0) = N0 (titik data awal yang dipilih)
+  const A = (K - N0) / N0;
+  // k from last known actual data point (relatif terhadap titik awal yang dipilih)
+  let k;
+  if(lastTRel === 0) {
+    // Titik awal yang dipilih = data terakhir, k diasumsikan dari default growth rate referensi
+    k = 0.190;
+  } else {
+    k = -Math.log((K / lastActual - 1) / A) / lastTRel;
+  }
+
+  // Prediction, diprediksi hingga kuartal & tahun target yang dipilih, dihitung relatif terhadap titik awal (startQuarter, startYear)
+  const totalQuartersFromStart = (predYear - startYear) * 4 + (predQuarter - startQuarter);
+  const targetT = totalQuartersFromStart;
+  const predVal = model(targetT, K, A, k);
+
+  document.getElementById('resultNumber').textContent = predVal.toFixed(1);
+  const resultFormulaEl = document.getElementById('resultFormula');
+  resultFormulaEl.innerHTML = `\\(N(${targetT}) = \\dfrac{${K}}{1 + ${A.toFixed(2)}\\,e^{-${k.toFixed(3)} \\times ${targetT}}} = ${predVal.toFixed(2)}\\ \\text{juta}\\)`;
+  if(window.MathJax && MathJax.typesetPromise) { MathJax.typesetPromise([resultFormulaEl]); }
+  document.getElementById('resultBox').classList.add('show');
+
+  // ===== Interpretasi Parameter (otomatis) =====
+  document.getElementById('paramKVal').textContent = `≈ ${K}`;
+  document.getElementById('paramA').textContent = `≈ ${A.toFixed(2)}`;
+  document.getElementById('paramK').textContent = `≈ ${k.toFixed(3)}`;
+  const formulaEl = document.getElementById('paramFormula');
+  formulaEl.innerHTML = `\\(N(t) = \\dfrac{${K}}{1 + ${A.toFixed(2)} \\times e^{-${k.toFixed(3)}\\,t}}\\), dengan \\(t=0\\) di ${startPoint.period}`;
+  if(window.MathJax && MathJax.typesetPromise) { MathJax.typesetPromise([formulaEl]); }
+
+  // ===== Interpretasi Hasil Prediksi (otomatis) =====
+  const predBox = document.getElementById('predInterpretasiBox');
+  const predText = document.getElementById('predInterpretasiText');
+  const sisaKapasitas = K - predVal;
+  const persenK = (predVal / K * 100);
+  const naikDariTerakhir = predVal - lastActual;
+  let fase;
+  if(persenK < 50) fase = 'masih tahap pertumbuhan cepat, jauh dari titik jenuh';
+  else if(persenK < 85) fase = 'sudah melewati titik tengah dan mulai mendekati fase pelandaian';
+  else if(persenK < 98) fase = 'mendekati titik jenuh (saturasi), pertumbuhan melambat signifikan';
+  else fase = 'sangat dekat dengan kapasitas maksimum, hampir mencapai batas atas K';
+  const arah = naikDariTerakhir >= 0 ? 'bertambah' : 'berkurang';
+  predText.innerHTML = `Pada <strong>Kuartal ${predQuarter} tahun ${predYear}</strong>, model memprediksi jumlah pengguna QRIS mencapai <strong>${predVal.toFixed(1)} juta</strong> (\\(t=${targetT}\\) dari ${startPoint.period}), setara <strong>${persenK.toFixed(1)}%</strong> dari kapasitas maksimum \\(K=${K}\\) juta. Dibanding data aktual terakhir (${lastActual} juta di Q4 2025), proyeksi ini ${arah} sekitar <strong>${Math.abs(naikDariTerakhir).toFixed(1)} juta</strong>. Pada titik ini, pertumbuhan QRIS ${fase}, dengan sisa ruang pertumbuhan sekitar <strong>${sisaKapasitas.toFixed(1)} juta</strong> pengguna sebelum mendekati batas \\(K\\).`;
+  predBox.style.display = 'block';
+  if(window.MathJax && MathJax.typesetPromise) { MathJax.typesetPromise([predText]); }
+
+  // Build sim chart
+  const labels = [];
+  const actualData = [];
+  const modelData = [];
+  const predData = [];
+
+  for(let t = 0; t <= Math.max(lastTRel, targetT); t++) {
+    const absQuarterIndex0 = (startQuarter - 1) + t; // 0-based quarter index from Q1 of startYear
+    const yr = startYear + Math.floor(absQuarterIndex0/4);
+    const q = (absQuarterIndex0 % 4) + 1;
+    labels.push(`Q${q} ${yr}`);
+    const mv = +model(t, K, A, k).toFixed(2);
+    if(t <= lastTRel) {
+      const found = qrisData.find(d => d.t === t + startT);
+      actualData.push(found ? found.actual : null);
+      modelData.push(mv);
+      predData.push(null);
+    } else {
+      actualData.push(null);
+      modelData.push(null);
+      predData.push(mv);
+    }
+  }
+  
+  if(simChartObj) { simChartObj.destroy(); }
+  const ctx = document.getElementById('simChart');
+  simChartObj = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Data Aktual', data: actualData, borderColor:'#4F46E5', backgroundColor:'rgba(79,70,229,0.07)', fill:true, tension:0.4, pointRadius:4, borderWidth:2 },
+        { label: `Model (${startPoint.period} – Q4 2025)`, data: modelData, borderColor:'#06B6D4', backgroundColor:'transparent', tension:0.4, pointRadius:2, borderWidth:2 },
+        { label: `Prediksi hingga Q${predQuarter} ${predYear}`, data: predData, borderColor:'#F59E0B', borderDash:[6,4], backgroundColor:'transparent', tension:0.4, pointRadius:3, borderWidth:2 }
+      ]
+    },
+    options: {
+      responsive:true, animation:{duration:800},
+      plugins:{legend:{position:'bottom', labels:{font:{size:11}}},
+        annotation: {}
+      },
+      scales:{y:{beginAtZero:true, ticks:{callback:v=>`${v}M`}}, x:{ticks:{maxRotation:45, font:{size:9}}}}
+    }
+  });
+
+  buildScenChart(N0, lastActual, lastTRel, startYear, K, startQuarter);
+}
+function buildScenChart(N0, lastActual, lastT, startYear, currentK, startQuarter) {
+  if(scenChartObj) { scenChartObj.destroy(); }
+  N0 = N0 || 18; lastActual = lastActual || 60; lastT = lastT || 15; startYear = startYear || 2022; startQuarter = startQuarter || 1;
+  let scenarios = [lastActual + 5, lastActual + 15, lastActual + 30, lastActual + 50];
+  if(!isNaN(currentK) && currentK > lastActual) {
+    scenarios = [currentK, ...scenarios.filter(s => Math.abs(s - currentK) > 0.01)];
+  }
+  scenarios = scenarios.slice(0, 4).sort((a,b) => a - b).map(v => +v.toFixed(1));
+  const colors = ['#EF4444','#4F46E5','#10B981','#F59E0B'];
+  const labels = [];
+  for(let t = 0; t <= 40; t++) {
+    const absQuarterIndex0 = (startQuarter - 1) + t;
+    const yr = startYear + Math.floor(absQuarterIndex0/4);
+    const q = (absQuarterIndex0%4)+1;
+    labels.push(`Q${q} ${yr}`);
+  }
+  const ctx = document.getElementById('scenChart');
+  scenChartObj = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: scenarios.map((K,i) => {
+        const A = (K-N0)/N0;
+        const k = lastT === 0 ? 0.190 : -Math.log((K/lastActual-1)/A)/lastT;
+        return {
+          label: `K = ${K} juta`,
+          data: Array.from({length:41}, (_,t) => +model(t,K,A,k).toFixed(2)),
+          borderColor: colors[i], backgroundColor:'transparent',
+          tension:0.4, pointRadius:0, borderWidth:2
+        };
+      })
+    },
+    options: {
+      responsive:true,
+      plugins:{legend:{position:'bottom', labels:{font:{size:11}}}},
+      scales:{y:{beginAtZero:true, ticks:{callback:v=>`${v}M`}}, x:{ticks:{maxRotation:45, font:{size:9}, maxTicksLimit:12}}}
+    }
+  });
+
+  // ===== Penjelasan otomatis grafik skenario K =====
+  const scenText = document.getElementById('scenInterpretasiText');
+  if(scenText) {
+    const kMin = scenarios[0], kMax = scenarios[scenarios.length-1];
+    const listK = scenarios.map(K => `<strong>${K} juta</strong>`).join(', ');
+    scenText.innerHTML = `Grafik ini membandingkan <strong>${scenarios.length} skenario kapasitas maksimum (K)</strong> berbeda, yaitu ${listK}, dengan titik data awal \\(N_0=${N0}\\) juta yang sama. Setiap kurva adalah solusi model \\(N(t)=\\dfrac{K}{1+Ae^{-kt}}\\) dengan nilai \\(K\\) tersebut, sehingga terlihat jelas <strong>hubungan antara asumsi K dan bentuk kurva</strong>: semakin besar K yang diasumsikan, semakin tinggi dan semakin lama pula pengguna QRIS terus bertumbuh sebelum mencapai titik jenuh (saturasi) di angka K-nya masing-masing. Sebaliknya, K yang lebih kecil (mendekati ${kMin} juta) membuat kurva lebih cepat melandai. Grafik ini menunjukkan bahwa <strong>K adalah asumsi</strong>, bukan fakta pasti, sehingga penting untuk memahami seberapa sensitif hasil prediksi terhadap pilihan nilai K.`;
+    if(window.MathJax && MathJax.typesetPromise) { MathJax.typesetPromise([scenText]); }
+  }
+}
+// ===== KUIS =====
+const questions = [
+  { q: "Apa yang dimaksud dengan persamaan diferensial?", opts:["Persamaan yang menghubungkan suatu nilai dengan laju perubahannya","Persamaan yang hanya memuat bilangan bulat","Persamaan kuadrat dengan dua variabel","Persamaan yang tidak memuat fungsi"], ans:0, fb:"Persamaan diferensial menghubungkan suatu nilai dengan laju perubahannya sendiri, membantu menggambarkan fenomena nyata yang terus berubah." },
+  { q: "Persamaan diferensial yang digunakan dalam penelitian QRIS ini adalah orde berapa?", opts:["Orde dua","Orde nol","Orde satu","Orde tiga"], ans:2, fb:"PD orde satu hanya melibatkan turunan pertama \\(\\left(\\dfrac{dN}{dt}\\right)\\), cukup untuk menggambarkan pertumbuhan pengguna QRIS." },
+  { q: "Mengapa digunakan kapasitas maksimum (K) dalam model pertumbuhan QRIS?", opts:["Karena pemerintah membatasi jumlah pengguna","Karena QRIS hanya untuk bank tertentu","Karena pertumbuhan pengguna tidak bisa terus bertambah tanpa batas, dibatasi oleh populasi & akses digital","Karena data QRIS berhenti di 2025"], ans:2, fb:"K (carrying capacity) mencerminkan titik jenuh pertumbuhan, dipengaruhi jumlah penduduk usia produktif dan akses smartphone." },
+  { q: "Metode apa yang digunakan untuk menyelesaikan model PD pertumbuhan QRIS?", opts:["Metode Euler","Metode Faktor Integrasi","Metode Runge-Kutta","Metode Separasi Variabel"], ans:3, fb:"Separasi variabel memisahkan suku \\(N\\) ke satu sisi dan \\(t\\) ke sisi lain, lalu mengintegralkan keduanya." },
+  { q: "Nilai kapasitas maksimum K dalam penelitian ini adalah...", opts:["60 juta pengguna","80 juta pengguna","70 juta pengguna","100 juta pengguna"], ans:2, fb:"K = 70 juta. Lebih besar dari data terakhir (60 juta di Q4 2025), diestimasi berdasarkan tren perlambatan dan inklusi keuangan." },
+  { q: "Dari mana nilai konstanta \\(A \\approx 2{,}89\\) diperoleh?", opts:["Dari rata-rata semua data","Dari kondisi awal \\(N(0) = 18\\) juta saat \\(t = 0\\)","Dari data pengguna akhir saat \\(t = 15\\)","Dari literatur Bank Indonesia"], ans:1, fb:"\\(A\\) dihitung dari kondisi awal: \\(18 = \\dfrac{70}{1+A} \\Rightarrow A = \\dfrac{52}{18} \\approx 2{,}89\\)" },
+  { q: "Apa yang terjadi pada laju pertumbuhan pengguna QRIS saat \\(N\\) mendekati \\(K\\)?", opts:["Laju pertumbuhan semakin cepat","Laju pertumbuhan tetap konstan","Laju pertumbuhan menjadi negatif","Laju pertumbuhan melambat mendekati nol"], ans:3, fb:"Faktor \\(\\left(1-\\dfrac{N}{K}\\right)\\) mendekati 0 ketika \\(N \\to K\\), sehingga \\(\\dfrac{dN}{dt} \\to 0\\). Pertumbuhan melambat." },
+  { q: "Solusi umum dari persamaan diferensial model QRIS adalah...", opts:["\\(N(t) = K \\cdot e^{kt}\\)","\\(N(t) = \\dfrac{K}{1 + A\\,e^{-kt}}\\)","\\(N(t) = N_0 + kt\\)","\\(N(t) = A \\cdot \\sin(kt)\\)"], ans:1, fb:"Melalui separasi variabel, diperoleh solusi umum \\(N(t) = \\dfrac{K}{1 + A\\,e^{-kt}}\\)." },
+  { q: "Pada periode 2022–2023, pertumbuhan pengguna QRIS tergolong...", opts:["Lambat dan stabil","Tidak ada perubahan","Cepat (+28 juta pengguna)","Menurun drastis"], ans:2, fb:"Dari 18 juta (Q1 2022) ke 46 juta (Q4 2023), bertambah sekitar 28 juta dalam 7 kuartal." },
+  { q: "Apakah model dalam penelitian ini merupakan turunan langsung dari model logistik?", opts:["Ya, langsung dari Verhulst 1838","Tidak, model disusun dari asumsi sendiri, hasilnya kebetulan memiliki karakteristik serupa","Ya, karena rumusnya sama persis","Tidak ada hubungan sama sekali"], ans:1, fb:"Model disusun dari asumsi independen berdasarkan pola data QRIS, bukan diambil langsung dari model logistik manapun." },
+];
+const QUIZ_TIME = 20; // detik per soal
+const RING_CIRC = 125.6; // 2*pi*20
+let currentQ = 0, score = 0, answered = false;
+let gamePoints = 0, combo = 0, bestCombo = 0, timeLeft = QUIZ_TIME, timerInterval = null;
+let answerHistory = []; // 'correct' | 'wrong' | null (belum dijawab)
+
+function initQuiz() {
+  currentQ = 0; score = 0; gamePoints = 0; combo = 0; bestCombo = 0;
+  answerHistory = questions.map(() => null);
+  buildJourneyTrack();
+  renderQuestion();
+}
+function buildJourneyTrack() {
+  const track = document.getElementById('journeyTrack');
+  track.innerHTML = questions.map((_,i) => `<div class="journey-node" id="jnode${i}"></div>`).join('');
+}
+function updateJourneyTrack() {
+  questions.forEach((_,i) => {
+    const node = document.getElementById('jnode'+i);
+    if(!node) return;
+    node.className = 'journey-node';
+    if(i === currentQ) node.classList.add('current');
+    else if(answerHistory[i] === 'correct') node.classList.add('done-correct');
+    else if(answerHistory[i] === 'wrong') node.classList.add('done-wrong');
+  });
+}
+function renderQuestion() {
+  answered = false;
+  document.getElementById('quizScore').style.display = 'none';
+  document.getElementById('quizContainer').style.display = 'block';
+  const q = questions[currentQ];
+  document.getElementById('qNum').textContent = `Pertanyaan ${currentQ+1} / ${questions.length}`;
+  document.getElementById('qText').innerHTML = q.q;
+  document.getElementById('progressFill').style.width = ((currentQ)/questions.length*100) + '%';
+  document.getElementById('qFeedback').className = 'quiz-feedback';
+  document.getElementById('nextBtn').style.display = 'none';
+  document.getElementById('hudScore').textContent = gamePoints;
+  updateJourneyTrack();
+  const optContainer = document.getElementById('qOptions');
+  optContainer.innerHTML = q.opts.map((opt, i) => `
+    <div class="quiz-option" onclick="selectAnswer(${i})" id="opt${i}">
+      <span class="option-letter">${String.fromCharCode(65+i)}</span>
+      <span>${opt}</span>
+      <span class="option-points-badge" id="ptBadge${i}"></span>
+    </div>
+  `).join('');
+  if(window.MathJax && MathJax.typesetPromise) { MathJax.typesetPromise([document.getElementById('qText'), optContainer]); }
+  startTimer();
+}
+function startTimer() {
+  clearInterval(timerInterval);
+  timeLeft = QUIZ_TIME;
+  const ring = document.getElementById('timerRing');
+  const num = document.getElementById('timerNum');
+  ring.classList.remove('urgent');
+  ring.style.strokeDashoffset = 0;
+  num.textContent = timeLeft;
+  timerInterval = setInterval(() => {
+    timeLeft--;
+    num.textContent = Math.max(timeLeft,0);
+    const offset = RING_CIRC * (1 - timeLeft / QUIZ_TIME);
+    ring.style.strokeDashoffset = offset;
+    if(timeLeft <= 5) ring.classList.add('urgent');
+    if(timeLeft <= 0) {
+      clearInterval(timerInterval);
+      if(!answered) selectAnswer(-1); // waktu habis, dianggap salah
+    }
+  }, 1000);
+}
+function showPointPopup(text, x, y) {
+  const el = document.createElement('div');
+  el.className = 'point-popup';
+  el.textContent = text;
+  el.style.left = x + 'px';
+  el.style.top = y + 'px';
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 1100);
+}
+function showMilestone(text) {
+  const toast = document.getElementById('milestoneToast');
+  toast.textContent = text;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 1800);
+}
+function selectAnswer(idx) {
+  if(answered) return;
+  answered = true;
+  clearInterval(timerInterval);
+  const q = questions[currentQ];
+  const fb = document.getElementById('qFeedback');
+  const isCorrect = idx === q.ans;
+  document.querySelectorAll('.quiz-option').forEach((el, i) => {
+    if(i === q.ans) { el.classList.add('correct'); el.querySelector('.option-letter').textContent = '✓'; }
+    else if(i === idx && idx !== q.ans) { el.classList.add('wrong'); el.querySelector('.option-letter').textContent = '✗'; }
+  });
+
+  if(isCorrect) {
+    score++;
+    combo++;
+    if(combo > bestCombo) bestCombo = combo;
+    // Poin dasar 100 + bonus kecepatan (maks 100 jika dijawab instan) + bonus combo
+    const speedBonus = Math.round((timeLeft / QUIZ_TIME) * 100);
+    const comboBonus = combo >= 2 ? (combo - 1) * 20 : 0;
+    const earned = 100 + speedBonus + comboBonus;
+    gamePoints += earned;
+    answerHistory[currentQ] = 'correct';
+
+    const badge = document.getElementById('ptBadge' + idx);
+    if(badge) { badge.textContent = `+${earned}`; badge.classList.add('show'); }
+    const optEl = document.getElementById('opt' + idx);
+    if(optEl) {
+      const rect = optEl.getBoundingClientRect();
+      showPointPopup(`+${earned}`, rect.right - 60, rect.top);
+    }
+
+    fb.className = 'quiz-feedback correct show';
+    fb.innerHTML = `✅ <strong>Benar! +${earned} poin</strong>${comboBonus>0 ? ` (termasuk bonus combo +${comboBonus})` : ''}. ` + q.fb;
+
+    if(combo === 3) showMilestone('🔥 Combo 3! Kamu lagi panas!');
+    else if(combo === 5) showMilestone('⚡ Combo 5! Luar biasa!');
+    else if(combo === 7) showMilestone('🚀 Combo 7! Tak terhentikan!');
+    else if(combo === questions.length) showMilestone('👑 PERFECT COMBO! Semua benar!');
+  } else {
+    combo = 0;
+    answerHistory[currentQ] = 'wrong';
+    fb.className = 'quiz-feedback wrong show';
+    fb.innerHTML = (idx === -1 ? '⏰ <strong>Waktu habis!</strong> ' : '❌ <strong>Kurang tepat.</strong> ') + q.fb;
+  }
+
+  // Update HUD
+  document.getElementById('hudScore').textContent = gamePoints;
+  const hudCombo = document.getElementById('hudCombo');
+  document.getElementById('hudComboNum').textContent = combo;
+  if(combo >= 2) hudCombo.classList.add('active'); else hudCombo.classList.remove('active');
+  updateJourneyTrack();
+
+  if(window.MathJax && MathJax.typesetPromise) { MathJax.typesetPromise([fb]); }
+  document.getElementById('nextBtn').style.display = 'flex';
+}
+function nextQuestion() {
+  currentQ++;
+  if(currentQ >= questions.length) showScore();
+  else renderQuestion();
+}
+function showScore() {
+  clearInterval(timerInterval);
+  document.getElementById('progressFill').style.width = '100%';
+  document.getElementById('quizContainer').style.display = 'none';
+  const scoreDiv = document.getElementById('quizScore');
+  scoreDiv.style.display = 'block';
+  document.getElementById('scoreNum').textContent = score;
+  const pct = score / questions.length;
+  const pctRounded = Math.round(pct * 100);
+  document.getElementById('scorePct').textContent = pctRounded + '%';
+  document.getElementById('scoreGamePts').textContent = gamePoints;
+  document.getElementById('scoreBestCombo').textContent = bestCombo + '×';
+  let emoji, stars, msg, rank;
+  if(pct >= 0.9) { emoji='🏆'; stars='⭐⭐⭐⭐⭐'; rank='🥇 Master QRIS'; msg='Luar biasa! Kamu menguasai materi pemodelan PD dan pertumbuhan QRIS dengan sangat baik.'; }
+  else if(pct >= 0.7) { emoji='🎉'; stars='⭐⭐⭐⭐'; rank='🥈 Mahir'; msg='Bagus sekali! Pemahamanmu sudah kuat. Coba ulangi untuk hasil sempurna.'; }
+  else if(pct >= 0.5) { emoji='👍'; stars='⭐⭐⭐'; rank='🥉 Cukup Baik'; msg='Lumayan! Kamu sudah memahami sebagian besar materi. Pelajari lagi bagian teori dan langkah pemodelan.'; }
+  else { emoji='📚'; stars='⭐⭐'; rank='🌱 Pemula'; msg='Semangat! Silakan kembali ke menu Teori dan Langkah Pemodelan untuk memperdalam pemahaman.'; }
+  document.getElementById('scoreEmoji').textContent = emoji;
+  document.getElementById('scoreRank').textContent = rank;
+  document.getElementById('scoreStars').textContent = stars;
+  document.getElementById('scoreMsg').textContent = msg;
+}
+function restartQuiz() { initQuiz(); }
+// ===== INIT =====
+window.onload = () => {
+  initHeroChart();
+};
+</script>
+</body>
+</html>
